@@ -1,0 +1,26 @@
+[package]
+name = "glycin"
+version.workspace = true
+authors.workspace = true
+description.workspace = true
+license.workspace = true
+homepage.workspace = true
+repository.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+async-std = "1.12.0"
+gio = "0.17.9"
+glib = "0.17.9"
+zbus = "3.13.1"
+glycin-utils = { path = "../glycin-utils/" }
+memfd = "0.6.3"
+memmap = { package = "memmap2", version = "0.6.0" }
+gdk = { package = "gdk4", version = "0.6.3", features = ["v4_10"] }
+nix = "0.26.2"
+lcms2 = "5.6.0"
+rgb = "0.8.36"
+safe-transmute = "0.11.2"
+anyhow = { version = "1.0.71", features = ["backtrace"] }
+futures = "0.3.28"
