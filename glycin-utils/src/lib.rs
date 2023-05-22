@@ -13,6 +13,7 @@ use zbus::zvariant::{self, Optional, Type};
 
 use std::ffi::CString;
 use std::ops::{Deref, DerefMut};
+use std::os::fd::AsRawFd;
 use std::os::fd::{FromRawFd, IntoRawFd, RawFd};
 use std::sync::Mutex;
 use std::time::Duration;
@@ -200,7 +201,7 @@ impl Communication {
     }
 
     pub async fn new(decoder: impl Decoder + 'static) -> Self {
-        let unix_stream = unsafe { UnixStream::from_raw_fd(3) };
+        let unix_stream = unsafe { UnixStream::from_raw_fd(std::io::stdin().as_raw_fd()) };
 
         let instruction_handler = DecodingInstruction {
             decoder: Mutex::new(Box::new(decoder)),

@@ -10,9 +10,9 @@ use gdk::prelude::*;
 use glycin_utils::*;
 use zbus::zvariant;
 
-use std::ffi::OsStr;
 use std::os::fd::AsRawFd;
 use std::os::fd::FromRawFd;
+use std::os::fd::OwnedFd;
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]
@@ -43,10 +43,11 @@ impl<'a> DecoderProcess<'a> {
             .set_nonblocking(true)
             .expect("Couldn't set nonblocking");
 
-        let subprocess_launcher = gio::SubprocessLauncher::new(gio::SubprocessFlags::NONE);
-        subprocess_launcher.take_fd(fd_decoder, 3);
-        let args = [
-            "bwrap",
+        let mut command = async_std::process::Command::new("bwrap");
+
+        command.stdin(OwnedFd::from(fd_decoder));
+
+        command.args([
             "--unshare-all",
             "--die-with-parent",
             "--chdir",
@@ -56,12 +57,15 @@ impl<'a> DecoderProcess<'a> {
             "/",
             "--dev",
             "/dev",
-            decoder.to_str().unwrap(),
-        ];
-        let subprocess = subprocess_launcher.spawn(&args.map(OsStr::new))?;
+        ]);
+        command.arg(decoder);
+
+        let mut subprocess = command.spawn()?;
 
         if let Some(cancellable) = cancellable {
-            cancellable.connect_cancelled_local(move |_| subprocess.force_exit());
+            cancellable.connect_cancelled_local(move |_| {
+                let _result = subprocess.kill();
+            });
         }
 
         // Do not await directly but combined with subprocess.wait_future
