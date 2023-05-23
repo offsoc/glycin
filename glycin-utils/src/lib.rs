@@ -261,7 +261,7 @@ pub enum RemoteError {
     ZBus(zbus::Error),
     DecodingError(String),
     InternalDecoderError,
-    UnsupportedImageFormat,
+    UnsupportedImageFormat(String),
 }
 
 impl From<DecoderError> for RemoteError {
@@ -269,7 +269,7 @@ impl From<DecoderError> for RemoteError {
         match err {
             DecoderError::DecodingError(msg) => Self::DecodingError(msg),
             DecoderError::InternalDecoderError => Self::InternalDecoderError,
-            DecoderError::UnsupportedImageFormat => Self::UnsupportedImageFormat,
+            DecoderError::UnsupportedImageFormat(msg) => Self::UnsupportedImageFormat(msg),
         }
     }
 }
@@ -278,7 +278,7 @@ impl From<DecoderError> for RemoteError {
 pub enum DecoderError {
     DecodingError(String),
     InternalDecoderError,
-    UnsupportedImageFormat,
+    UnsupportedImageFormat(String),
 }
 
 impl std::fmt::Display for DecoderError {
@@ -288,7 +288,9 @@ impl std::fmt::Display for DecoderError {
             Self::InternalDecoderError => {
                 write!(f, "{}", gettext("Internal error while interpreting image"))
             }
-            Self::UnsupportedImageFormat => write!(f, "{}", gettext("Unsupported image format")),
+            Self::UnsupportedImageFormat(msg) => {
+                write!(f, "{} {msg}", gettext("Unsupported image format: "))
+            }
         }
     }
 }
@@ -305,7 +307,7 @@ impl From<anyhow::Error> for DecoderError {
 pub trait GenericContexts<T> {
     fn context_failed(self) -> anyhow::Result<T>;
     fn context_internal(self) -> Result<T, DecoderError>;
-    fn context_unsupported(self) -> Result<T, DecoderError>;
+    fn context_unsupported(self, msg: String) -> Result<T, DecoderError>;
 }
 
 impl<T, E> GenericContexts<T> for Result<T, E>
@@ -320,8 +322,8 @@ where
         self.map_err(|_| DecoderError::InternalDecoderError)
     }
 
-    fn context_unsupported(self) -> Result<T, DecoderError> {
-        self.map_err(|_| DecoderError::UnsupportedImageFormat)
+    fn context_unsupported(self, msg: String) -> Result<T, DecoderError> {
+        self.map_err(|_| DecoderError::UnsupportedImageFormat(msg))
     }
 }
 
@@ -334,7 +336,7 @@ impl<T> GenericContexts<T> for Option<T> {
         self.ok_or(DecoderError::InternalDecoderError)
     }
 
-    fn context_unsupported(self) -> Result<T, DecoderError> {
-        self.ok_or(DecoderError::UnsupportedImageFormat)
+    fn context_unsupported(self, msg: String) -> Result<T, DecoderError> {
+        self.ok_or(DecoderError::UnsupportedImageFormat(msg))
     }
 }

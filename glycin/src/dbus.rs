@@ -31,7 +31,7 @@ impl<'a> DecoderProcess<'a> {
         let decoder = config
             .image_decoders
             .get(mime_type.as_str())
-            .ok_or(Error::UnknownImageFormat)?
+            .ok_or_else(|| Error::UnknownImageFormat(mime_type.to_string()))?
             .exec
             .clone();
 
@@ -318,7 +318,17 @@ pub enum Error {
     GLibError(glib::Error),
     StdIoError(Arc<std::io::Error>),
     InternalCommunicationCanceled,
-    UnknownImageFormat,
+    UnknownImageFormat(String),
+}
+
+impl Error {
+    pub fn unsupported_format(&self) -> Option<String> {
+        match self {
+            Self::UnknownImageFormat(mime_type) => Some(mime_type.clone()),
+            Self::RemoteError(RemoteError::UnsupportedImageFormat(msg)) => Some(msg.clone()),
+            _ => None,
+        }
+    }
 }
 
 impl From<RemoteError> for Error {
@@ -360,8 +370,8 @@ impl std::fmt::Display for Error {
             Self::InternalCommunicationCanceled => {
                 write!(f, "Internal communication was unexpectedly canceled")
             }
-            Self::UnknownImageFormat => {
-                write!(f, "Unknown image format")
+            Self::UnknownImageFormat(mime_type) => {
+                write!(f, "Unknown image format: {mime_type}")
             }
         }
     }

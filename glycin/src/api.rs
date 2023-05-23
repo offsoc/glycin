@@ -50,8 +50,8 @@ impl ImageRequest {
     async fn guess_mime_type(gfile_worker: &GFileWorker) -> Result<glib::GString> {
         let head = gfile_worker.head().await?;
         let (content_type, unsure) = gio::content_type_guess(None::<String>, &head);
-        let mime_type =
-            gio::content_type_get_mime_type(&content_type).ok_or(Error::UnknownImageFormat);
+        let mime_type = gio::content_type_get_mime_type(&content_type)
+            .ok_or_else(|| Error::UnknownImageFormat(content_type.to_string()));
 
         // Prefer file extension for TIFF since it can be a RAW format as well
         let is_tiff = mime_type.clone().ok() == Some("image/tiff".into());
@@ -60,7 +60,7 @@ impl ImageRequest {
             if let Some(filename) = gfile_worker.file().basename() {
                 let content_type_fn = gio::content_type_guess(Some(filename), &head).0;
                 return gio::content_type_get_mime_type(&content_type_fn)
-                    .ok_or(Error::UnknownImageFormat);
+                    .ok_or_else(|| Error::UnknownImageFormat(content_type_fn.to_string()));
             }
         }
 

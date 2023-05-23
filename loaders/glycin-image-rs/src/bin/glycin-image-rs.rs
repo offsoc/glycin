@@ -169,7 +169,7 @@ impl ImageRsDecoder<Reader> {
             "image/tiff" => Self::Tiff(codecs::tiff::TiffDecoder::new(data).context_failed()?),
             "image/webp" => Self::WebP(codecs::webp::WebPDecoder::new(data).context_failed()?),
 
-            _ => return Err(DecoderError::UnsupportedImageFormat),
+            mime_type => return Err(DecoderError::UnsupportedImageFormat(mime_type.to_string())),
         })
     }
 }
@@ -217,6 +217,7 @@ impl<'a, T: std::io::Read + std::io::Seek + 'a> ImageRsDecoder<T> {
         match self {
             Self::Png(d) => Some(d.apng().into_frames()),
             Self::Gif(d) => Some(d.into_frames()),
+            Self::WebP(d) => Some(d.into_frames()),
             _ => None,
         }
     }
