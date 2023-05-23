@@ -3,6 +3,7 @@ use crate::dbus::*;
 use gio::prelude::*;
 use glycin_utils::*;
 
+pub use crate::config::MimeType;
 pub use crate::dbus::Error;
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -11,7 +12,6 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug)]
 pub struct ImageRequest {
     file: gio::File,
-    mime_type: Option<glib::GString>,
     cancellable: Option<gio::Cancellable>,
 }
 
@@ -19,7 +19,6 @@ impl ImageRequest {
     pub fn new(file: gio::File) -> Self {
         Self {
             file,
-            mime_type: None,
             cancellable: None,
         }
     }
@@ -29,7 +28,7 @@ impl ImageRequest {
         self
     }
 
-    pub async fn request<'a>(mut self) -> Result<Image<'a>> {
+    pub async fn request<'a>(self) -> Result<Image<'a>> {
         let config = config::Config::load();
 
         let gfile_worker = GFileWorker::spawn(self.file.clone(), self.cancellable.clone());
@@ -38,16 +37,15 @@ impl ImageRequest {
         let process = DecoderProcess::new(&mime_type, &config, self.cancellable.as_ref()).await?;
         let info = process.init(gfile_worker).await?;
 
-        self.mime_type = Some(mime_type);
-
         Ok(Image {
             process,
             info,
             request: self,
+            mime_type,
         })
     }
 
-    async fn guess_mime_type(gfile_worker: &GFileWorker) -> Result<glib::GString> {
+    async fn guess_mime_type(gfile_worker: &GFileWorker) -> Result<String> {
         let head = gfile_worker.head().await?;
         let (content_type, unsure) = gio::content_type_guess(None::<String>, &head);
         let mime_type = gio::content_type_get_mime_type(&content_type)
@@ -60,11 +58,12 @@ impl ImageRequest {
             if let Some(filename) = gfile_worker.file().basename() {
                 let content_type_fn = gio::content_type_guess(Some(filename), &head).0;
                 return gio::content_type_get_mime_type(&content_type_fn)
-                    .ok_or_else(|| Error::UnknownImageFormat(content_type_fn.to_string()));
+                    .ok_or_else(|| Error::UnknownImageFormat(content_type_fn.to_string()))
+                    .map(|x| x.to_string());
             }
         }
 
-        mime_type
+        mime_type.map(|x| x.to_string())
     }
 }
 
@@ -74,6 +73,7 @@ pub struct Image<'a> {
     request: ImageRequest,
     process: DecoderProcess<'a>,
     info: ImageInfo,
+    mime_type: MimeType,
 }
 
 impl<'a> Image<'a> {
@@ -91,6 +91,14 @@ impl<'a> Image<'a> {
 
     pub fn info(&self) -> &ImageInfo {
         &self.info
+    }
+
+    pub fn mime_type(&self) -> MimeType {
+        self.mime_type.clone()
+    }
+
+    pub fn format_name(&self) -> String {
+        self.info().format_name.clone()
     }
 
     pub fn request(&self) -> &ImageRequest {
