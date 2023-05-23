@@ -73,7 +73,7 @@ fn decode(context: HeifContext, _data: Vec<u8>) -> Result<Frame, DecoderError> {
 
     let mut image = match image_result {
         Err(err) if matches!(err.sub_code, libheif_rs::HeifErrorSubCode::UnsupportedCodec) => {
-            return Err(DecoderError::UnsupportedImageFormat);
+            return Err(DecoderError::UnsupportedImageFormat("".into()));
         }
         image => image.context_failed()?,
     };

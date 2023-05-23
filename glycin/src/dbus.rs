@@ -43,21 +43,11 @@ impl<'a> DecoderProcess<'a> {
             .set_nonblocking(true)
             .expect("Couldn't set nonblocking");
 
-        let mut command = async_std::process::Command::new("bwrap");
+        let mut command = async_std::process::Command::new("flatpak-spawn");
 
         command.stdin(OwnedFd::from(fd_decoder));
 
-        command.args([
-            "--unshare-all",
-            "--die-with-parent",
-            "--chdir",
-            "/",
-            "--ro-bind",
-            "/",
-            "/",
-            "--dev",
-            "/dev",
-        ]);
+        command.args(["--sandbox", "--directory=/"]);
         command.arg(decoder);
 
         let mut subprocess = command.spawn()?;

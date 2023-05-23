@@ -1,0 +1,21 @@
+option(
+  'profile',
+  type: 'combo',
+  choices: [
+    'release',
+    'dev'
+  ],
+  value: 'release',
+)
+option(
+  'loaders',
+  type: 'array',
+  choices: [
+    'glycin-heif',
+    'glycin-image-rs',
+  ],
+  value: [
+    'glycin-heif',
+    'glycin-image-rs',
+  ],
+)
