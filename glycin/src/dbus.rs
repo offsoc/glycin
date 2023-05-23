@@ -24,7 +24,7 @@ pub struct DecoderProcess<'a> {
 
 impl<'a> DecoderProcess<'a> {
     pub async fn new(
-        mime_type: &glib::GString,
+        mime_type: &config::MimeType,
         config: &config::Config,
         cancellable: Option<&gio::Cancellable>,
     ) -> Result<DecoderProcess<'a>, Error> {
@@ -161,7 +161,9 @@ impl<'a> DecoderProcess<'a> {
                 glib::ffi::GFALSE,
                 std::ptr::null_mut(),
             );
-            glib::translate::from_glib_full(glib::ffi::g_mapped_file_get_bytes(mmap))
+            let bytes = glib::translate::from_glib_full(glib::ffi::g_mapped_file_get_bytes(mmap));
+            glib::ffi::g_mapped_file_unref(mmap);
+            bytes
         };
 
         let texture = gdk::MemoryTexture::new(
