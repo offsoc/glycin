@@ -53,7 +53,7 @@ impl Config {
 
             if kind == Some("loader") {
                 if let Some(mime_type) = mime_type {
-                    if let Ok(exec) = keyfile.string(group.to_str(), "exec") {
+                    if let Ok(exec) = keyfile.string(group.to_str().trim(), "exec") {
                         let cfg = ImageDecoderConfig { exec: exec.into() };
 
                         config.image_decoders.insert(mime_type.to_string(), cfg);
