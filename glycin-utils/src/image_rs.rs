@@ -35,12 +35,12 @@ impl Frame {
 impl From<image::ColorType> for MemoryFormat {
     fn from(color_type: image::ColorType) -> Self {
         match color_type {
-            image::ColorType::L8 => Self::L8,
-            image::ColorType::La8 => Self::L8a8,
+            image::ColorType::L8 => Self::G8,
+            image::ColorType::La8 => Self::G8a8,
             image::ColorType::Rgb8 => Self::R8g8b8,
             image::ColorType::Rgba8 => Self::R8g8b8a8,
-            image::ColorType::L16 => Self::L16,
-            image::ColorType::La16 => Self::L16a16,
+            image::ColorType::L16 => Self::G16,
+            image::ColorType::La16 => Self::G16a16,
             image::ColorType::Rgb16 => Self::R16g16b16,
             image::ColorType::Rgba16 => Self::R16g16b16a16,
             image::ColorType::Rgb32F => Self::R32g32b32Float,

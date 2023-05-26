@@ -143,19 +143,15 @@ pub enum MemoryFormat {
     R32g32b32Float,
     R32g32b32a32FloatPremultiplied,
     R32g32b32a32Float,
-    L8,
-    L8a8,
-    L16,
-    L16a16,
+    G8,
+    G8a8,
+    G16,
+    G16a16,
 }
 
 impl MemoryFormat {
     pub const fn n_bytes(self) -> MemoryFormatBytes {
         match self {
-            MemoryFormat::L8 => MemoryFormatBytes::B1,
-            MemoryFormat::L8a8 => MemoryFormatBytes::B2,
-            MemoryFormat::L16 => MemoryFormatBytes::B2,
-            MemoryFormat::L16a16 => MemoryFormatBytes::B4,
             MemoryFormat::B8g8r8a8Premultiplied => MemoryFormatBytes::B4,
             MemoryFormat::A8r8g8b8Premultiplied => MemoryFormatBytes::B4,
             MemoryFormat::R8g8b8a8Premultiplied => MemoryFormatBytes::B4,
@@ -173,6 +169,10 @@ impl MemoryFormat {
             MemoryFormat::R32g32b32Float => MemoryFormatBytes::B12,
             MemoryFormat::R32g32b32a32FloatPremultiplied => MemoryFormatBytes::B16,
             MemoryFormat::R32g32b32a32Float => MemoryFormatBytes::B16,
+            MemoryFormat::G8 => MemoryFormatBytes::B1,
+            MemoryFormat::G8a8 => MemoryFormatBytes::B2,
+            MemoryFormat::G16 => MemoryFormatBytes::B2,
+            MemoryFormat::G16a16 => MemoryFormatBytes::B4,
         }
     }
 }

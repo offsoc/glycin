@@ -70,10 +70,6 @@ fn transform<F: Copy>(
 
 const fn lcms_pixel_format(format: MemoryFormat) -> lcms2::PixelFormat {
     match format {
-        MemoryFormat::L8 => lcms2::PixelFormat::GRAY_8,
-        MemoryFormat::L8a8 => lcms2::PixelFormat::GRAYA_8,
-        MemoryFormat::L16 => lcms2::PixelFormat::GRAY_16,
-        MemoryFormat::L16a16 => lcms2::PixelFormat::GRAYA_16,
         MemoryFormat::B8g8r8a8Premultiplied => premul(lcms2::PixelFormat::BGRA_8),
         MemoryFormat::A8r8g8b8Premultiplied => premul(lcms2::PixelFormat::ARGB_8),
         MemoryFormat::R8g8b8a8Premultiplied => premul(lcms2::PixelFormat::RGBA_8),
@@ -91,6 +87,10 @@ const fn lcms_pixel_format(format: MemoryFormat) -> lcms2::PixelFormat {
         MemoryFormat::R32g32b32Float => lcms2::PixelFormat::RGB_FLT,
         MemoryFormat::R32g32b32a32FloatPremultiplied => premul(lcms2::PixelFormat::RGBA_FLT),
         MemoryFormat::R32g32b32a32Float => lcms2::PixelFormat::RGBA_FLT,
+        MemoryFormat::G8 => lcms2::PixelFormat::GRAY_8,
+        MemoryFormat::G8a8 => lcms2::PixelFormat::GRAYA_8,
+        MemoryFormat::G16 => lcms2::PixelFormat::GRAY_16,
+        MemoryFormat::G16a16 => lcms2::PixelFormat::GRAYA_16,
     }
 }
 
