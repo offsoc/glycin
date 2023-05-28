@@ -12,19 +12,19 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug)]
 pub struct ImageRequest {
     file: gio::File,
-    cancellable: Option<gio::Cancellable>,
+    cancellable: gio::Cancellable,
 }
 
 impl ImageRequest {
     pub fn new(file: gio::File) -> Self {
         Self {
             file,
-            cancellable: None,
+            cancellable: gio::Cancellable::new(),
         }
     }
 
     pub fn cancellable(mut self, cancellable: impl IsA<gio::Cancellable>) -> Self {
-        self.cancellable = Some(cancellable.upcast());
+        self.cancellable = cancellable.upcast();
         self
     }
 
@@ -108,9 +108,7 @@ impl<'a> Image<'a> {
 
 impl Drop for ImageRequest {
     fn drop(&mut self) {
-        if let Some(cancellable) = &self.cancellable {
-            cancellable.cancel();
-        }
+        self.cancellable.cancel();
     }
 }
 

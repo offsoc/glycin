@@ -3,6 +3,7 @@
 use crate::api;
 use crate::config;
 
+use async_std::process::ExitStatus;
 use futures::channel::oneshot;
 use futures::future;
 use futures::FutureExt;
@@ -26,7 +27,7 @@ impl<'a> DecoderProcess<'a> {
     pub async fn new(
         mime_type: &config::MimeType,
         config: &config::Config,
-        cancellable: Option<&gio::Cancellable>,
+        cancellable: &gio::Cancellable,
     ) -> Result<DecoderProcess<'a>, Error> {
         let decoder = config
             .image_decoders
@@ -62,19 +63,31 @@ impl<'a> DecoderProcess<'a> {
 
         let mut subprocess = command.spawn()?;
 
-        if let Some(cancellable) = cancellable {
-            cancellable.connect_cancelled_local(move |_| {
-                let _result = subprocess.kill();
-            });
-        }
-
-        // Do not await directly but combined with subprocess.wait_future
-        let dbus_connection = zbus::ConnectionBuilder::unix_stream(unix_stream)
+        let guid = zbus::Guid::generate();
+        let dbus_result = zbus::ConnectionBuilder::unix_stream(unix_stream)
             .p2p()
-            .server(&zbus::Guid::generate())
+            .server(&guid)
             .auth_mechanisms(&[zbus::AuthMechanism::Anonymous])
             .build()
-            .await?;
+            .shared();
+
+        futures::select! {
+            _result = dbus_result.clone().fuse() => Ok(()),
+            _result = cancellable.future().fuse() => {
+                let _result = subprocess.kill();
+                Err(glib::Error::from(gio::Cancelled)).map_err(Into::into)
+            },
+            return_status = subprocess.status().fuse() => match return_status {
+                Ok(status) => Err(Error::PrematureExit(status)),
+                Err(err) => Err(err.into()),
+            }
+        }?;
+
+        cancellable.connect_cancelled_local(move |_| {
+            let _result = subprocess.kill();
+        });
+
+        let dbus_connection = dbus_result.await?;
 
         let decoding_instruction = DecodingInstructionProxy::new(&dbus_connection)
             .await
@@ -104,11 +117,13 @@ impl<'a> DecoderProcess<'a> {
         futures::pin_mut!(reader_error);
 
         futures::select! {
-            res = image_info.clone() => res.map(|_| ()).map_err(Into::into),
-            res = reader_error.fuse() => res,
+            _result = image_info.clone().fuse() => Ok(()),
+            result = reader_error.fuse() => result,
         }?;
 
-        image_info.await.map_err(Into::into)
+        let res = image_info.await.map_err(Into::into);
+
+        res
     }
 
     pub async fn decode_frame(&self) -> Result<api::Frame, Error> {
@@ -229,7 +244,7 @@ pub struct GFileWorker {
 }
 use std::sync::Mutex;
 impl GFileWorker {
-    pub fn spawn(file: gio::File, cancellable: Option<gio::Cancellable>) -> GFileWorker {
+    pub fn spawn(file: gio::File, cancellable: gio::Cancellable) -> GFileWorker {
         let gfile = file.clone();
 
         let (error_send, error_recv) = oneshot::channel();
@@ -238,10 +253,10 @@ impl GFileWorker {
 
         std::thread::spawn(move || {
             Self::handle_errors(error_send, move || {
-                let reader = gfile.read(cancellable.as_ref())?;
+                let reader = gfile.read(Some(&cancellable))?;
                 let mut buf = vec![0; BUF_SIZE];
 
-                let n = reader.read(&mut buf, cancellable.as_ref())?;
+                let n = reader.read(&mut buf, Some(&cancellable))?;
                 let first_bytes = Arc::new(buf[..n].to_vec());
                 first_bytes_send
                     .send(first_bytes.clone())
@@ -253,7 +268,7 @@ impl GFileWorker {
                 drop(first_bytes);
 
                 loop {
-                    let n = reader.read(&mut buf, cancellable.as_ref())?;
+                    let n = reader.read(&mut buf, Some(&cancellable))?;
                     if n == 0 {
                         break;
                     }
@@ -321,6 +336,7 @@ pub enum Error {
     StdIoError(Arc<std::io::Error>),
     InternalCommunicationCanceled,
     UnknownImageFormat(String),
+    PrematureExit(ExitStatus),
 }
 
 impl Error {
@@ -374,6 +390,9 @@ impl std::fmt::Display for Error {
             }
             Self::UnknownImageFormat(mime_type) => {
                 write!(f, "Unknown image format: {mime_type}")
+            }
+            Self::PrematureExit(status) => {
+                write!(f, "Loader process exited early: {status}")
             }
         }
     }
