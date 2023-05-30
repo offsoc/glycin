@@ -229,10 +229,10 @@ const fn gdk_memory_format(format: MemoryFormat) -> gdk::MemoryFormat {
             gdk::MemoryFormat::R32g32b32a32FloatPremultiplied
         }
         MemoryFormat::R32g32b32a32Float => gdk::MemoryFormat::R32g32b32a32Float,
-        MemoryFormat::G8 => gdk::MemoryFormat::__Unknown(18),
         MemoryFormat::G8a8 => gdk::MemoryFormat::__Unknown(19),
-        MemoryFormat::G16 => gdk::MemoryFormat::__Unknown(20),
-        MemoryFormat::G16a16 => gdk::MemoryFormat::__Unknown(21),
+        MemoryFormat::G8 => gdk::MemoryFormat::__Unknown(20),
+        MemoryFormat::G16a16 => gdk::MemoryFormat::__Unknown(22),
+        MemoryFormat::G16 => gdk::MemoryFormat::__Unknown(23),
     }
 }
 
