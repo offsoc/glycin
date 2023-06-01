@@ -6,7 +6,7 @@ license = "LGPL-3.0-or-later"
 homepage = "https://gitlab.gnome.org/GNOME/Incubator/loupe"
 repository = "https://gitlab.gnome.org/GNOME/Incubator/loupe"
 edition = "2021"
-rust-version = "1.65.0"
+rust-version = "1.70"
 
 [profile.release]
 lto = true

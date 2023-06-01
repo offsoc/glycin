@@ -54,6 +54,11 @@ impl ImageRequest {
         }
     }
 
+    pub fn sandbox_mechanism(mut self, sandbox_mechanism: Option<SandboxMechanism>) -> Self {
+        self.sandbox_mechanism = sandbox_mechanism;
+        self
+    }
+
     pub fn cancellable(mut self, cancellable: impl IsA<gio::Cancellable>) -> Self {
         self.cancellable = cancellable.upcast();
         self

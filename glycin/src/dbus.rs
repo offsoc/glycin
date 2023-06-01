@@ -75,7 +75,10 @@ impl<'a> DecoderProcess<'a> {
                     Some(decoder_bin),
                 )
             }
-            SandboxMechanism::NotSandboxed => (decoder_bin, vec![], None),
+            SandboxMechanism::NotSandboxed => {
+                eprintln!("WARNING: Glycin running without sandbox.");
+                (decoder_bin, vec![], None)
+            }
         };
 
         let mut command = async_std::process::Command::new(bin);
