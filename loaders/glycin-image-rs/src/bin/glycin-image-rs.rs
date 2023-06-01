@@ -32,6 +32,12 @@ fn worker(decoder: ImageRsDecoder<Reader>, data: Reader, mime_type: String, send
         if decoder.is_none() {
             decoder = ImageRsDecoder::new(data.clone(), &mime_type).ok();
         }
+
+        // Use transparent background instead of suggested background color
+        if let Some(ImageRsDecoder::WebP(webp)) = &mut decoder {
+            let _result = webp.set_background_color(image::Rgba::from([0, 0, 0, 0]));
+        }
+
         let frames = std::mem::take(&mut decoder).unwrap().into_frames().unwrap();
 
         for frame in frames {
