@@ -1,6 +1,6 @@
 //! Internal DBus API
 
-use crate::api;
+use crate::api::{self, SandboxMechanism};
 use crate::config;
 
 use async_std::process::ExitStatus;
@@ -27,9 +27,10 @@ impl<'a> DecoderProcess<'a> {
     pub async fn new(
         mime_type: &config::MimeType,
         config: &config::Config,
+        sandbox_mechanism: SandboxMechanism,
         cancellable: &gio::Cancellable,
     ) -> Result<DecoderProcess<'a>, Error> {
-        let decoder = config
+        let decoder_bin = config
             .image_decoders
             .get(mime_type.as_str())
             .ok_or_else(|| Error::UnknownImageFormat(mime_type.to_string()))?
@@ -44,22 +45,47 @@ impl<'a> DecoderProcess<'a> {
             .set_nonblocking(true)
             .expect("Couldn't set nonblocking");
 
-        let mut command = async_std::process::Command::new("bwrap");
+        let (bin, args, final_arg) = match sandbox_mechanism {
+            SandboxMechanism::Bwrap => (
+                "bwrap".into(),
+                vec![
+                    "--unshare-all",
+                    "--die-with-parent",
+                    // change working directory to something that exists
+                    "--chdir",
+                    "/",
+                    "--ro-bind",
+                    "/",
+                    "/",
+                    "--dev",
+                    "/dev",
+                ],
+                Some(decoder_bin),
+            ),
+            SandboxMechanism::FlatpakSpawn => {
+                (
+                    "flatpak-spawn".into(),
+                    vec![
+                        "--sandbox",
+                        // die with parent
+                        "--watch-bus",
+                        // change working directory to something that exists
+                        "--directory=/",
+                    ],
+                    Some(decoder_bin),
+                )
+            }
+            SandboxMechanism::NotSandboxed => (decoder_bin, vec![], None),
+        };
+
+        let mut command = async_std::process::Command::new(bin);
 
         command.stdin(OwnedFd::from(fd_decoder));
 
-        command.args([
-            "--unshare-all",
-            "--die-with-parent",
-            "--chdir",
-            "/",
-            "--ro-bind",
-            "/",
-            "/",
-            "--dev",
-            "/dev",
-        ]);
-        command.arg(decoder);
+        command.args(args);
+        if let Some(arg) = final_arg {
+            command.arg(arg);
+        }
 
         let mut subprocess = command.spawn()?;
 
@@ -121,9 +147,7 @@ impl<'a> DecoderProcess<'a> {
             result = reader_error.fuse() => result,
         }?;
 
-        let res = image_info.await.map_err(Into::into);
-
-        res
+        image_info.await.map_err(Into::into)
     }
 
     pub async fn decode_frame(&self) -> Result<api::Frame, Error> {

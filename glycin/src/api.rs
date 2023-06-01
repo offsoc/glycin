@@ -2,17 +2,47 @@ use crate::config;
 use crate::dbus::*;
 use gio::prelude::*;
 use glycin_utils::*;
+use std::sync::OnceLock;
 
 pub use crate::config::MimeType;
 pub use crate::dbus::Error;
 
+static IS_FLATPAKED: OnceLock<bool> = OnceLock::new();
+
 pub type Result<T> = std::result::Result<T, Error>;
+
+async fn is_flatpaked() -> bool {
+    if let Some(result) = IS_FLATPAKED.get() {
+        *result
+    } else {
+        let flatpaked = async_std::path::Path::new("/.flatpak-info").is_file().await;
+        *IS_FLATPAKED.get_or_init(|| flatpaked)
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum SandboxMechanism {
+    Bwrap,
+    FlatpakSpawn,
+    NotSandboxed,
+}
+
+impl SandboxMechanism {
+    pub async fn detect() -> Self {
+        if is_flatpaked().await {
+            Self::FlatpakSpawn
+        } else {
+            Self::Bwrap
+        }
+    }
+}
 
 /// Image request builder
 #[derive(Debug)]
 pub struct ImageRequest {
     file: gio::File,
     cancellable: gio::Cancellable,
+    sandbox_mechanism: Option<SandboxMechanism>,
 }
 
 impl ImageRequest {
@@ -20,6 +50,7 @@ impl ImageRequest {
         Self {
             file,
             cancellable: gio::Cancellable::new(),
+            sandbox_mechanism: None,
         }
     }
 
@@ -34,7 +65,19 @@ impl ImageRequest {
         let gfile_worker = GFileWorker::spawn(self.file.clone(), self.cancellable.clone());
         let mime_type = Self::guess_mime_type(&gfile_worker).await?;
 
-        let process = DecoderProcess::new(&mime_type, &config, self.cancellable.as_ref()).await?;
+        let sandbox_mechanism = if let Some(m) = self.sandbox_mechanism {
+            m
+        } else {
+            SandboxMechanism::detect().await
+        };
+
+        let process = DecoderProcess::new(
+            &mime_type,
+            &config,
+            sandbox_mechanism,
+            self.cancellable.as_ref(),
+        )
+        .await?;
         let info = process.init(gfile_worker).await?;
 
         Ok(Image {
