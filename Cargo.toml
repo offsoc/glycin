@@ -12,6 +12,9 @@ rust-version = "1.70"
 lto = true
 codegen-units = 1
 
+[profile.dev.package.image]
+opt-level = 3
+
 [workspace]
 members = [
     "glycin",
