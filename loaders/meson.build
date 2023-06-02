@@ -30,7 +30,6 @@ cargo_env = {
 }
 
 foreach loader : get_option('loaders')
-message(loader)
   cargo_build = custom_target(
     loader,
     build_by_default: true,
