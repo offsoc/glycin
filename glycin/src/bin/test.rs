@@ -11,7 +11,8 @@ fn main() {
 
         async_std::task::block_on(async move {
             let cancellable = gio::Cancellable::new();
-            let image_request = ImageRequest::new(file.clone()).cancellable(cancellable);
+            let mut image_request = ImageRequest::new(file.clone());
+            image_request.cancellable(cancellable);
 
             let image = image_request.request().await.expect("x");
             let frame = image.next_frame().await.unwrap();
@@ -51,7 +52,8 @@ fn main() {
 
         async_std::task::block_on(async move {
             let cancellable = gio::Cancellable::new();
-            let image_request = ImageRequest::new(file).cancellable(cancellable);
+            let mut image_request = ImageRequest::new(file);
+            image_request.cancellable(cancellable);
 
             let image = image_request.request().await.unwrap();
 

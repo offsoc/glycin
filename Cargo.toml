@@ -26,3 +26,6 @@ default-members = [
     "glycin",
     "glycin-utils",
 ]
+
+[patch.crates-io]
+libheif-sys = { git = "https://github.com/sophie-h/libheif-sys.git", rev="f10f5b43c288286ad827374ffa3507ccf7001190" }
