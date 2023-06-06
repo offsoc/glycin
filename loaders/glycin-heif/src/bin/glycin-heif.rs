@@ -1,5 +1,5 @@
 use glycin_utils::*;
-use libheif_rs::{ColorProfile, ColorSpace, HeifContext, LibHeif, RgbChroma};
+use libheif_rs::{ColorProfile, ColorSpace, HeifContext, LibHeif, RgbChroma, StreamReader};
 use std::io::Cursor;
 use std::io::Read;
 use std::sync::Mutex;
@@ -9,15 +9,17 @@ fn main() {
 
 #[derive(Default)]
 pub struct ImgDecoder {
-    pub decoder: Mutex<Option<(HeifContext, Vec<u8>)>>,
+    pub decoder: Mutex<Option<HeifContext<'static>>>,
 }
 
 impl Decoder for ImgDecoder {
     fn init(&self, mut stream: UnixStream, _mime_type: String) -> Result<ImageInfo, DecoderError> {
         let mut data = Vec::new();
-        stream.read_to_end(&mut data).context_internal()?;
+        let total_size = stream.read_to_end(&mut data).context_internal()?;
 
-        let context = HeifContext::read_from_bytes(&data).context_failed()?;
+        let stream_reader =
+            StreamReader::new(Cursor::new(data), total_size.try_into().context_failed()?);
+        let context = HeifContext::read_from_reader(Box::new(stream_reader)).context_failed()?;
 
         let handle = context.primary_image_handle().context_failed()?;
 
@@ -28,18 +30,17 @@ impl Decoder for ImgDecoder {
         // TODO: Later use libheif 1.16 to get info if there is a transformation
         image_info.transformations_applied = true;
 
-        *self.decoder.lock().unwrap() = Some((context, data));
+        *self.decoder.lock().unwrap() = Some(context);
         Ok(image_info)
     }
 
     fn decode_frame(&self) -> Result<Frame, DecoderError> {
-        let (context, data) =
-            std::mem::take(&mut *self.decoder.lock().unwrap()).context_internal()?;
-        decode(context, data)
+        let context = std::mem::take(&mut *self.decoder.lock().unwrap()).context_internal()?;
+        decode(context)
     }
 }
 
-fn decode(context: HeifContext, _data: Vec<u8>) -> Result<Frame, DecoderError> {
+fn decode(context: HeifContext) -> Result<Frame, DecoderError> {
     let handle = context.primary_image_handle().context_failed()?;
 
     let rgb_chroma = if handle.luma_bits_per_pixel() > 8 {

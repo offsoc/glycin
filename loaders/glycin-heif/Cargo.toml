@@ -11,5 +11,5 @@ rust-version.workspace = true
 
 [dependencies]
 glycin-utils = { path = "../../glycin-utils/" }
-libheif-rs = "0.19.2"
+libheif-rs = "0.20.0"
 safe-transmute = "0.11.2"
