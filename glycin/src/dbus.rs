@@ -8,6 +8,7 @@ use futures::channel::oneshot;
 use futures::future;
 use futures::FutureExt;
 use gdk::prelude::*;
+use gio::glib;
 use glycin_utils::*;
 use zbus::zvariant;
 

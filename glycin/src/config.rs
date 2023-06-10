@@ -1,3 +1,4 @@
+use gio::glib;
 use std::collections::HashMap;
 use std::ffi::OsStr;
 

@@ -1,5 +1,7 @@
 //! Utilities for building glycin decoders
 
+#![cfg_attr(docsrs, feature(doc_cfg))]
+
 #[cfg(feature = "image-rs")]
 pub mod image_rs;
 
@@ -26,7 +28,6 @@ pub struct SharedMemory {
 
 impl SharedMemory {
     pub fn new(size: u64) -> Self {
-        // TODO: use memfd crate again
         let memfd = nix::sys::memfd::memfd_create(
             &CString::new("glycin-frame").unwrap(),
             nix::sys::memfd::MemFdCreateFlag::MFD_CLOEXEC
