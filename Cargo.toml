@@ -1,5 +1,5 @@
 [workspace.package]
-version = "0.1.0-alpha.1"
+version = "0.1.0-alpha.2"
 authors = ["Sophie Herold"]
 description = "Sandboxed image rendering"
 license = "LGPL-3.0-or-later"
@@ -16,6 +16,7 @@ codegen-units = 1
 opt-level = 3
 
 [workspace]
+resolver = "2"
 members = [
     "glycin",
     "glycin-utils",

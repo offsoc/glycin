@@ -22,9 +22,6 @@ zbus = "3.13.1"
 [features]
 image-rs = ["image"]
 
-# docs.rs-specific configuration
 [package.metadata.docs.rs]
-# document all features
 all-features = true
-# defines the configuration attribute `docsrs`
 rustdoc-args = ["--cfg", "docsrs"]

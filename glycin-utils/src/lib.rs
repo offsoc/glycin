@@ -1,8 +1,9 @@
 //! Utilities for building glycin decoders
 
-#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_auto_cfg))]
 
 #[cfg(feature = "image-rs")]
+#[doc(hidden)]
 pub mod image_rs;
 
 pub use anyhow;
