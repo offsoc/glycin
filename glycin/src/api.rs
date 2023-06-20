@@ -65,7 +65,7 @@ impl ImageRequest {
     }
 
     pub async fn request<'a>(self) -> Result<Image<'a>> {
-        let config = config::Config::load();
+        let config = config::Config::get().await;
 
         let gfile_worker = GFileWorker::spawn(self.file.clone(), self.cancellable.clone());
         let mime_type = Self::guess_mime_type(&gfile_worker).await?;
@@ -78,7 +78,7 @@ impl ImageRequest {
 
         let process = DecoderProcess::new(
             &mime_type,
-            &config,
+            config,
             sandbox_mechanism,
             self.cancellable.as_ref(),
         )
@@ -166,8 +166,9 @@ pub struct Frame {
 }
 
 /// Returns a list of mime types for the supported image formats
-pub fn image_formats() -> Vec<MimeType> {
-    config::Config::load()
+pub async fn image_formats() -> Vec<MimeType> {
+    config::Config::get()
+        .await
         .image_decoders
         .keys()
         .cloned()

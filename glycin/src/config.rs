@@ -1,11 +1,16 @@
+use async_std::{fs, path, prelude::*};
 use gio::glib;
+
 use std::collections::HashMap;
 use std::ffi::OsStr;
+use std::sync::OnceLock;
 
 pub type MimeType = String;
 
 const CONFIG_FILE_EXT: &str = "conf";
 const API_VERSION: u8 = 0;
+
+static CONFIG: OnceLock<Config> = OnceLock::new();
 
 #[derive(Debug, Clone, Default)]
 pub struct Config {
@@ -18,7 +23,16 @@ pub struct ImageDecoderConfig {
 }
 
 impl Config {
-    pub fn load() -> Self {
+    pub async fn get() -> &'static Self {
+        if let Some(config) = CONFIG.get() {
+            config
+        } else {
+            let config = Self::load().await;
+            CONFIG.get_or_init(|| config)
+        }
+    }
+
+    async fn load() -> Self {
         let mut config = Config::default();
 
         let mut data_dirs = glib::system_data_dirs();
@@ -29,11 +43,13 @@ impl Config {
             data_dir.push(format!("{API_VERSION}+"));
             data_dir.push("conf.d");
 
-            if let Ok(config_files) = std::fs::read_dir(data_dir) {
-                for entry in config_files.flatten() {
-                    if entry.path().extension() == Some(OsStr::new(CONFIG_FILE_EXT)) {
-                        if let Err(err) = Self::load_file(&entry.path(), &mut config) {
-                            eprintln!("Failed to load config file: {err}");
+            if let Ok(mut config_files) = fs::read_dir(data_dir).await {
+                while let Some(result) = config_files.next().await {
+                    if let Ok(entry) = result {
+                        if entry.path().extension() == Some(OsStr::new(CONFIG_FILE_EXT)) {
+                            if let Err(err) = Self::load_file(&entry.path(), &mut config).await {
+                                eprintln!("Failed to load config file: {err}");
+                            }
                         }
                     }
                 }
@@ -43,9 +59,15 @@ impl Config {
         config
     }
 
-    pub fn load_file(path: &std::path::Path, config: &mut Config) -> Result<(), glib::Error> {
+    async fn load_file(
+        path: &path::Path,
+        config: &mut Config,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let data = async_std::fs::read(path).await?;
+        let bytes = glib::Bytes::from_owned(data);
+
         let keyfile = glib::KeyFile::new();
-        keyfile.load_from_file(path, glib::KeyFileFlags::NONE)?;
+        keyfile.load_from_bytes(&bytes, glib::KeyFileFlags::NONE)?;
 
         for group in keyfile.groups() {
             let mut elements = group.to_str().split(':');
