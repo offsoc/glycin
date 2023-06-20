@@ -164,3 +164,12 @@ pub struct Frame {
     pub texture: gdk::Texture,
     pub delay: Option<std::time::Duration>,
 }
+
+/// Returns a list of mime types for the supported image formats
+pub fn image_formats() -> Vec<MimeType> {
+    config::Config::load()
+        .image_decoders
+        .keys()
+        .cloned()
+        .collect()
+}
