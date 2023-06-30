@@ -1,7 +1,7 @@
 project(
-    'glycin',
+    'glycin-loaders',
     'rust',
-    version: '0.0.1',
+    version: '0.1.alpha',
     meson_version: '>=0.57',
 )
 
@@ -17,5 +17,10 @@ compat_version = '0+'
 
 libexecdir = get_option('prefix') / get_option('libexecdir') / meson.project_name() / compat_version
 datadir = get_option('prefix') / get_option('datadir') / meson.project_name() / compat_version
+
+meson.add_dist_script(
+  'build-aux/dist-vendor.sh',
+  meson.project_version()
+)
 
 subdir('loaders')

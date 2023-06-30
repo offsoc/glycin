@@ -11,5 +11,5 @@ rust-version.workspace = true
 
 [dependencies]
 glycin-utils = { path = "../../glycin-utils/", features = ["image-rs"] }
-image = { version = "*", git = "https://github.com/image-rs/image.git" }
+image = "0.24.6"
 kamadak-exif = "0.5.5"
