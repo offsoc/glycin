@@ -1,10 +1,10 @@
 [workspace.package]
-version = "0.1.0-alpha.2"
+version = "0.1.0-alpha.3"
 authors = ["Sophie Herold"]
 description = "Sandboxed image rendering"
-license = "LGPL-3.0-or-later"
-homepage = "https://gitlab.gnome.org/GNOME/Incubator/loupe"
-repository = "https://gitlab.gnome.org/GNOME/Incubator/loupe"
+license = "LGPL-2.1"
+homepage = "https://gitlab.gnome.org/sophie-h/glycin"
+repository = "https://gitlab.gnome.org/sophie-h/glycin"
 edition = "2021"
 rust-version = "1.70"
 
