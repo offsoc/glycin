@@ -17,8 +17,7 @@ impl Decoder for ImgDecoder {
         let mut data = Vec::new();
         let total_size = stream.read_to_end(&mut data).context_internal()?;
 
-        let stream_reader =
-            StreamReader::new(Cursor::new(data), total_size.try_into().context_failed()?);
+        let stream_reader = StreamReader::new(Cursor::new(data), total_size.try_u64()?);
         let context = HeifContext::read_from_reader(Box::new(stream_reader)).context_failed()?;
 
         let handle = context.primary_image_handle().context_failed()?;

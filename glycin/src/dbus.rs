@@ -177,7 +177,7 @@ impl<'a> DecoderProcess<'a> {
             // This mmap would have the wrong size after ftruncate
             drop(mmap);
 
-            nix::unistd::ftruncate(raw_fd, (frame.height * frame.stride).into()).unwrap();
+            nix::unistd::ftruncate(raw_fd, (frame.height * frame.stride).try_i64()?).unwrap();
 
             // Need a new mmap with correct size
             unsafe { memmap::MmapMut::map_mut(raw_fd) }?
@@ -210,11 +210,11 @@ impl<'a> DecoderProcess<'a> {
         };
 
         let texture = gdk::MemoryTexture::new(
-            frame.width.try_into().unwrap(),
-            frame.height.try_into().unwrap(),
+            frame.width.try_i32()?,
+            frame.height.try_i32()?,
             gdk_memory_format(frame.memory_format),
             &bytes,
-            frame.stride.try_into().unwrap(),
+            frame.stride.try_usize()?,
         );
 
         Ok(api::Frame {
