@@ -106,7 +106,7 @@ pub struct Frame {
 
 impl Frame {
     pub fn new(width: u32, height: u32, memory_format: MemoryFormat, texture: Texture) -> Self {
-        let stride = memory_format.n_bytes() as u32 * width;
+        let stride = memory_format.n_bytes().u32() * width;
 
         Self {
             width,
@@ -190,6 +190,20 @@ pub enum MemoryFormatBytes {
     B16 = 16,
 }
 
+impl MemoryFormatBytes {
+    pub fn u32(self) -> u32 {
+        self as u32
+    }
+
+    pub fn u64(self) -> u64 {
+        self as u64
+    }
+
+    pub fn usize(self) -> usize {
+        self as usize
+    }
+}
+
 pub struct Communication {
     _dbus_connection: zbus::Connection,
 }
@@ -264,6 +278,7 @@ pub enum RemoteError {
     DecodingError(String),
     InternalDecoderError,
     UnsupportedImageFormat(String),
+    ConversionTooLargerError,
 }
 
 impl From<DecoderError> for RemoteError {
@@ -272,6 +287,7 @@ impl From<DecoderError> for RemoteError {
             DecoderError::DecodingError(msg) => Self::DecodingError(msg),
             DecoderError::InternalDecoderError => Self::InternalDecoderError,
             DecoderError::UnsupportedImageFormat(msg) => Self::UnsupportedImageFormat(msg),
+            DecoderError::ConversionTooLargerError => Self::ConversionTooLargerError,
         }
     }
 }
@@ -281,6 +297,7 @@ pub enum DecoderError {
     DecodingError(String),
     InternalDecoderError,
     UnsupportedImageFormat(String),
+    ConversionTooLargerError,
 }
 
 impl std::fmt::Display for DecoderError {
@@ -293,6 +310,7 @@ impl std::fmt::Display for DecoderError {
             Self::UnsupportedImageFormat(msg) => {
                 write!(f, "{} {msg}", gettext("Unsupported image format: "))
             }
+            err @ Self::ConversionTooLargerError => err.fmt(f),
         }
     }
 }
@@ -303,6 +321,13 @@ impl From<anyhow::Error> for DecoderError {
     fn from(err: anyhow::Error) -> Self {
         eprintln!("Decoding error: {err:?}");
         Self::DecodingError(format!("{err}"))
+    }
+}
+
+impl From<ConversionTooLargerError> for DecoderError {
+    fn from(err: ConversionTooLargerError) -> Self {
+        eprintln!("Decoding error: {err:?}");
+        Self::ConversionTooLargerError
     }
 }
 
@@ -342,3 +367,31 @@ impl<T> GenericContexts<T> for Option<T> {
         self.ok_or(DecoderError::UnsupportedImageFormat(msg))
     }
 }
+
+#[derive(Debug)]
+pub struct ConversionTooLargerError;
+
+impl std::fmt::Display for ConversionTooLargerError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
+        f.write_str(&gettext("Dimension too large for system"))
+    }
+}
+
+impl std::error::Error for ConversionTooLargerError {}
+
+pub trait SafeConversion: TryInto<usize> + TryInto<u32> + TryInto<u64> {
+    fn try_usize(self) -> Result<usize, ConversionTooLargerError> {
+        self.try_into().map_err(|_| ConversionTooLargerError)
+    }
+
+    fn try_u32(self) -> Result<u32, ConversionTooLargerError> {
+        self.try_into().map_err(|_| ConversionTooLargerError)
+    }
+
+    fn try_u64(self) -> Result<u64, ConversionTooLargerError> {
+        self.try_into().map_err(|_| ConversionTooLargerError)
+    }
+}
+
+impl SafeConversion for u32 {}
+impl SafeConversion for usize {}

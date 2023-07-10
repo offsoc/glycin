@@ -131,12 +131,12 @@ fn decode(context: HeifContext) -> Result<Frame, DecoderError> {
         RgbChroma::C444 => unreachable!(),
     };
 
-    let mut memory = SharedMemory::new(plane.stride as u64 * plane.height as u64);
+    let mut memory = SharedMemory::new(plane.stride.try_u64()? * u64::from(plane.height));
     Cursor::new(plane.data).read_exact(&mut memory).unwrap();
     let texture = memory.into_texture();
 
     let mut frame = Frame::new(plane.width, plane.height, memory_format, texture);
-    frame.stride = plane.stride as u32;
+    frame.stride = plane.stride.try_u32()?;
     frame.iccp = icc_profile.into();
 
     Ok(frame)

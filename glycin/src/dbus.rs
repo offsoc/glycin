@@ -162,17 +162,17 @@ impl<'a> DecoderProcess<'a> {
         let mut mmap = unsafe { memmap::MmapMut::map_mut(raw_fd) }?;
 
         // Align stride with pixel size if necessary
-        let mut mmap = if frame.stride % frame.memory_format.n_bytes() as u32 == 0 {
+        let mut mmap = if frame.stride % frame.memory_format.n_bytes().u32() == 0 {
             mmap
         } else {
-            let width = frame.width as usize * frame.memory_format.n_bytes() as usize;
-            let stride = frame.stride as usize;
+            let width = frame.width.try_usize()? * frame.memory_format.n_bytes().usize();
+            let stride = frame.stride.try_usize()?;
             let mut source = vec![0; width];
-            for row in 1..frame.height as usize {
+            for row in 1..frame.height.try_usize()? {
                 source.copy_from_slice(&mmap[row * stride..row * stride + width]);
                 mmap[row * width..(row + 1) * width].copy_from_slice(&source);
             }
-            frame.stride = width as u32;
+            frame.stride = width.try_u32()?;
 
             // This mmap would have the wrong size after ftruncate
             drop(mmap);
@@ -365,6 +365,7 @@ pub enum Error {
     InternalCommunicationCanceled,
     UnknownImageFormat(String),
     PrematureExit(ExitStatus),
+    ConversionTooLargerError,
 }
 
 impl Error {
@@ -407,6 +408,12 @@ impl From<zbus::Error> for Error {
     }
 }
 
+impl From<ConversionTooLargerError> for Error {
+    fn from(_err: ConversionTooLargerError) -> Self {
+        Self::ConversionTooLargerError
+    }
+}
+
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> StdResult<(), std::fmt::Error> {
         match self {
@@ -422,6 +429,7 @@ impl std::fmt::Display for Error {
             Self::PrematureExit(status) => {
                 write!(f, "Loader process exited early: {status}")
             }
+            err @ Self::ConversionTooLargerError => err.fmt(f),
         }
     }
 }

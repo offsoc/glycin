@@ -67,7 +67,7 @@ fn worker(decoder: ImageRsDecoder<Reader>, data: Reader, mime_type: String, send
                     let height = buffer.height();
 
                     let mut memory = SharedMemory::new(
-                        width as u64 * height as u64 * memory_format.n_bytes() as u64,
+                        u64::from(width) * u64::from(height) * memory_format.n_bytes().u64(),
                     );
                     Cursor::new(buffer.into_raw())
                         .read_exact(&mut memory)
