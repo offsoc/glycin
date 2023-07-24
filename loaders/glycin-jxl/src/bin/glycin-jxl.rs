@@ -70,7 +70,7 @@ impl Decoder for ImgDecoder {
             memory_format,
             texture,
         );
-        frame.iccp = Some(renderer.embedded_icc()).into();
+        frame.iccp = Some(renderer.rendered_icc()).into();
 
         Ok(frame)
     }
