@@ -2,6 +2,8 @@ use gdk::prelude::*;
 use glycin::*;
 
 fn main() {
+    dbg!(async_std::task::block_on(image_formats()));
+
     let images = std::fs::read_dir("images/static").unwrap();
 
     for entry in images {
@@ -18,21 +20,23 @@ fn main() {
             let frame = image.next_frame().await.unwrap();
 
             dbg!("read");
-            let texture = gdk::Texture::from_file(&file.clone()).unwrap();
+            if let Ok(texture) = gdk::Texture::from_file(&file.clone()) {
+                dbg!("write tiff");
+                let mut extension = path.extension().unwrap().to_os_string();
+                extension.push(".gtk.tiff");
+                let out_path =
+                    std::path::PathBuf::from_iter(&["out".into(), path.with_extension(extension)]);
+                texture.save_to_tiff(out_path).unwrap();
 
-            dbg!("write tiff");
-            let mut extension = path.extension().unwrap().to_os_string();
-            extension.push(".gtk.tiff");
-            let out_path =
-                std::path::PathBuf::from_iter(&["out".into(), path.with_extension(extension)]);
-            texture.save_to_tiff(out_path).unwrap();
-
-            dbg!("write png");
-            let mut extension = path.extension().unwrap().to_os_string();
-            extension.push(".gtk.png");
-            let out_path =
-                std::path::PathBuf::from_iter(&["out".into(), path.with_extension(extension)]);
-            texture.save_to_png(out_path).unwrap();
+                dbg!("write png");
+                let mut extension = path.extension().unwrap().to_os_string();
+                extension.push(".gtk.png");
+                let out_path =
+                    std::path::PathBuf::from_iter(&["out".into(), path.with_extension(extension)]);
+                texture.save_to_png(out_path).unwrap();
+            } else {
+                dbg!("no pixbuf support");
+            }
 
             dbg!("write decoded png");
             let mut extension = path.extension().unwrap().to_os_string();

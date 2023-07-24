@@ -13,9 +13,11 @@ option(
   choices: [
     'glycin-heif',
     'glycin-image-rs',
+    'glycin-jxl',
   ],
   value: [
     'glycin-heif',
     'glycin-image-rs',
+    'glycin-jxl',
   ],
 )

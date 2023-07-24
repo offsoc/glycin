@@ -970,6 +970,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "glycin-jxl"
+version = "0.1.0-alpha.3"
+dependencies = [
+ "glycin-utils",
+ "jxl-oxide",
+ "safe-transmute",
+]
+
+[[package]]
 name = "glycin-utils"
 version = "0.1.0-alpha.3"
 dependencies = [
@@ -1101,6 +1110,125 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c5f195fe497f702db0f318b07fdd68edb16955aed830df8363d837542f8f935a"
 dependencies = [
  "wasm-bindgen",
+]
+
+[[package]]
+name = "jxl-bitstream"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "76c3205d18cf6229b3f694de66e592886ff7afb0740bc0e85594e3b28d6f6622"
+dependencies = [
+ "tracing",
+]
+
+[[package]]
+name = "jxl-coding"
+version = "0.2.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7075600c762c1ce9e2dd1fbc3fa8ded2af1401fe2221449eca943977742dd0b4"
+dependencies = [
+ "jxl-bitstream",
+]
+
+[[package]]
+name = "jxl-color"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9084bc33b6d01e26b1db6c187514a51a57f4e3780335f3120ab55ee0b08f6e73"
+dependencies = [
+ "jxl-bitstream",
+ "jxl-coding",
+ "jxl-grid",
+]
+
+[[package]]
+name = "jxl-frame"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e2c4e276ea56d8bc4961f13501d565cc6b665f0da76e0e5f90aa44a1475eb409"
+dependencies = [
+ "jxl-bitstream",
+ "jxl-coding",
+ "jxl-grid",
+ "jxl-image",
+ "jxl-modular",
+ "jxl-vardct",
+ "tracing",
+]
+
+[[package]]
+name = "jxl-grid"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "48800b21ed6bb3bbc2f818ae9cd40530bdfb1a211f57d5a7a49b8b10f62145e8"
+
+[[package]]
+name = "jxl-image"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "28d10c717baa0dd19c25b37b6baebb5f07d7efdaa6225a65aa98dcaf1d40a3e5"
+dependencies = [
+ "jxl-bitstream",
+ "jxl-color",
+ "jxl-grid",
+ "tracing",
+]
+
+[[package]]
+name = "jxl-modular"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4fea731da48d358a60d6185c58ac897f22895ea0e3380df04c106c87e192a7d"
+dependencies = [
+ "jxl-bitstream",
+ "jxl-coding",
+ "jxl-grid",
+ "tracing",
+]
+
+[[package]]
+name = "jxl-oxide"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d90d7ccb9a843e69563abdab2cd362702668f23e39e7fa3dcdf2594b1d29042"
+dependencies = [
+ "jxl-bitstream",
+ "jxl-color",
+ "jxl-frame",
+ "jxl-grid",
+ "jxl-image",
+ "jxl-render",
+ "tracing",
+]
+
+[[package]]
+name = "jxl-render"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "774684715db3b6e60a13059ad746829c9f9b39b7865ba0dc7ea9fd93469d9297"
+dependencies = [
+ "jxl-bitstream",
+ "jxl-coding",
+ "jxl-color",
+ "jxl-frame",
+ "jxl-grid",
+ "jxl-image",
+ "jxl-modular",
+ "jxl-vardct",
+ "tracing",
+]
+
+[[package]]
+name = "jxl-vardct"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1abaffccbc217e48cb45b9aca639c18a873b66200fc5a3695fb98333e0b1fead"
+dependencies = [
+ "jxl-bitstream",
+ "jxl-coding",
+ "jxl-grid",
+ "jxl-modular",
+ "tracing",
 ]
 
 [[package]]

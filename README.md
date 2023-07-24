@@ -54,7 +54,7 @@ Not every new major version of the library has to break compatibility with the l
 
 The following features are supported by the glycin loaders provided in the [loaders](loaders) directory.
 
-| Format    | Loader   | ICC | CICP | EXIF | XMP | Animation | Library                    |
+| Format    | Decoder  | ICC | CICP | EXIF | XMP | Animation | Library                    |
 |-----------|----------|-----|------|------|-----|-----------|----------------------------|
 | AVIF      | heif     | ✔   | ✔    | ✔    | ✘   | ✘         | libheif-rs + libheif (C++) |
 | BMP       | image-rs | ✘   | —    | —    | —   | —         | image-rs                   |
@@ -66,14 +66,14 @@ The following features are supported by the glycin loaders provided in the [load
 | ICO       | image-rs | —   | —    | —    | —   | —         | image-rs                   |
 | JPEG      | image-rs | ✔   | —    | ✔    | ✘   | —         | image-rs                   |
 | JPEG 2000 | TODO     | ✘   | —    | ✘    | ？   | ✘         | jpeg2k? + openjpeg (C)     |
-| JPEG XL   | TODO     | ✔   | ✘    | ✘    | ？   | ✘         | jxl-oxide?                 |
+| JPEG XL   | jxl      | #7  | ✘    | ✘    | ？   | ✘         | jxl-oxide                  |
 | OpenEXR   | image-rs | —   | —    | —    | —   | —         | image-rs                   |
 | PNG       | image-rs | ✔   | ✘    | ✔    | ✘   | ✔         | image-rs                   |
 | PNM       | image-rs | —   | —    | —    | —   | —         | image-rs                   |
 | SVG       | image-rs | ✘   | —    | —    | ✘ * | —         | librsvg + gdk-pixbuf       |
 | TGA       | image-rs | —   | —    | —    | —   | —         | image-rs                   |
-| TIFF      | image-rs | ✘   | —    | ✔    | ✘   | —         | image-rs                   |
-| WEBP      | image-rs | ✘   | —    | ✔    | ✘   | ✔         | image-rs + libwebp (C)     |
+| TIFF      | image-rs | ✔   | —    | ✔    | ✘   | —         | image-rs                   |
+| WEBP      | image-rs | ✔   | —    | ✔    | ✘   | ✔         | image-rs + libwebp (C)     |
 
 | Symbol | Meaning                                        |
 |--------|------------------------------------------------|
