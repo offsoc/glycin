@@ -39,7 +39,7 @@ impl Config {
         data_dirs.push(glib::user_data_dir());
 
         for mut data_dir in data_dirs {
-            data_dir.push("glycin");
+            data_dir.push("glycin-loaders");
             data_dir.push(format!("{API_VERSION}+"));
             data_dir.push("conf.d");
 
