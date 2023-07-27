@@ -17,7 +17,7 @@ async-std = { version = "1.12.0", features = ["unstable"] }
 futures = "0.3.28"
 gdk = { package = "gdk4", version = "0.6.3", features = ["v4_10"] }
 gio = "0.17.9"
-glycin-utils = { version = "0.1.0-alpha.2", path = "../glycin-utils/" }
+glycin-utils = { version = "0.1.0-alpha.4", path = "../glycin-utils/" }
 lcms2 = "5.6.0"
 memfd = "0.6.3"
 memmap = { package = "memmap2", version = "0.7.0" }
@@ -27,5 +27,7 @@ safe-transmute = "0.11.2"
 zbus = "3.13.1"
 
 [package.metadata.docs.rs]
+all-features = true
 rustc-args = ["--cfg", "docsrs"]
-rustdoc-args = ["--cfg", "docsrs"]
+rustdoc-args = ["--cfg", "docsrs", "--generate-link-to-definition"]
+features = []
