@@ -145,10 +145,12 @@ pub enum MemoryFormat {
     R32g32b32Float,
     R32g32b32a32FloatPremultiplied,
     R32g32b32a32Float,
-    G8,
+    G8a8Premultiplied,
     G8a8,
-    G16,
+    G8,
+    G16a16Premultiplied,
     G16a16,
+    G16,
 }
 
 impl MemoryFormat {
@@ -171,10 +173,12 @@ impl MemoryFormat {
             MemoryFormat::R32g32b32Float => MemoryFormatBytes::B12,
             MemoryFormat::R32g32b32a32FloatPremultiplied => MemoryFormatBytes::B16,
             MemoryFormat::R32g32b32a32Float => MemoryFormatBytes::B16,
-            MemoryFormat::G8 => MemoryFormatBytes::B1,
+            MemoryFormat::G8a8Premultiplied => MemoryFormatBytes::B2,
             MemoryFormat::G8a8 => MemoryFormatBytes::B2,
-            MemoryFormat::G16 => MemoryFormatBytes::B2,
+            MemoryFormat::G8 => MemoryFormatBytes::B1,
+            MemoryFormat::G16a16Premultiplied => MemoryFormatBytes::B4,
             MemoryFormat::G16a16 => MemoryFormatBytes::B4,
+            MemoryFormat::G16 => MemoryFormatBytes::B2,
         }
     }
 }
