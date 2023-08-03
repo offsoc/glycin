@@ -7,8 +7,6 @@ The decoding happens in sandboxed modular *image loaders*.
 - [glycin-utils](glycin-utils) – Utilities to write loaders for glycin
 - [loaders](loaders) – Glycin loaders for several formats
 
-**Warning: This library is in alpha stage.**
-
 ## Example
 
 ```rust
