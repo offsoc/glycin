@@ -126,14 +126,24 @@ pub struct Image<'a> {
 
 impl<'a> Image<'a> {
     pub async fn next_frame(&self) -> Result<Frame> {
-        self.process.decode_frame().await.map_err(Into::into)
+        self.process
+            .decode_frame(glycin_utils::FrameRequest::default())
+            .await
+            .map_err(Into::into)
     }
 
     pub async fn texture(self) -> Result<gdk::Texture> {
         self.process
-            .decode_frame()
+            .decode_frame(glycin_utils::FrameRequest::default())
             .await
             .map(|x| x.texture)
+            .map_err(Into::into)
+    }
+
+    pub async fn specific_frame(&self, frame_request: FrameRequest) -> Result<Frame> {
+        self.process
+            .decode_frame(frame_request.request)
+            .await
             .map_err(Into::into)
     }
 
@@ -163,6 +173,28 @@ impl Drop for ImageRequest {
 pub struct Frame {
     pub texture: gdk::Texture,
     pub delay: Option<std::time::Duration>,
+}
+
+#[derive(Default, Debug)]
+#[must_use]
+pub struct FrameRequest {
+    request: glycin_utils::FrameRequest,
+}
+
+impl FrameRequest {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn scale(mut self, width: u32, height: u32) -> Self {
+        self.request.scale = Some((width, height)).into();
+        self
+    }
+
+    pub fn clip(mut self, x: u32, y: u32, width: u32, height: u32) -> Self {
+        self.request.clip = Some((x, y, width, height)).into();
+        self
+    }
 }
 
 /// Returns a list of mime types for the supported image formats

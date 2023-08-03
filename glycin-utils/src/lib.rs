@@ -64,8 +64,16 @@ impl DerefMut for SharedMemory {
 
 #[derive(Deserialize, Serialize, Type, Debug)]
 pub struct DecodingRequest {
+    /// Source from which the loader reads the image data
     pub fd: zvariant::OwnedFd,
     pub mime_type: String,
+}
+
+#[derive(Deserialize, Serialize, Type, Debug, Clone, Default)]
+pub struct FrameRequest {
+    pub scale: Optional<(u32, u32)>,
+    /// Instruction to only decode part of the image
+    pub clip: Optional<(u32, u32, u32, u32)>,
 }
 
 /// Various image metadata
@@ -243,7 +251,7 @@ impl Communication {
 
 pub trait Decoder: Send {
     fn init(&self, stream: UnixStream, mime_type: String) -> Result<ImageInfo, DecoderError>;
-    fn decode_frame(&self) -> Result<Frame, DecoderError>;
+    fn decode_frame(&self, frame_request: FrameRequest) -> Result<Frame, DecoderError>;
 }
 
 struct DecodingInstruction {
@@ -265,11 +273,11 @@ impl DecodingInstruction {
         Ok(image_info)
     }
 
-    async fn decode_frame(&self) -> Result<Frame, RemoteError> {
+    async fn decode_frame(&self, frame_request: FrameRequest) -> Result<Frame, RemoteError> {
         self.decoder
             .lock()
             .or(Err(RemoteError::InternalDecoderError))?
-            .decode_frame()
+            .decode_frame(frame_request)
             .map_err(Into::into)
     }
 }
@@ -409,3 +417,4 @@ pub trait SafeConversion:
 
 impl SafeConversion for usize {}
 impl SafeConversion for u32 {}
+impl SafeConversion for i32 {}

@@ -34,7 +34,7 @@ impl Decoder for ImgDecoder {
         Ok(image_info)
     }
 
-    fn decode_frame(&self) -> Result<Frame, DecoderError> {
+    fn decode_frame(&self, _frame_request: FrameRequest) -> Result<Frame, DecoderError> {
         let Some(mut image) =  std::mem::take(&mut *self.decoder.lock().unwrap())
 
          else {

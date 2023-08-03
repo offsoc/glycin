@@ -23,6 +23,7 @@ members = [
     "loaders/glycin-image-rs",
     "loaders/glycin-heif",
     "loaders/glycin-jxl",
+    "loaders/glycin-svg",
 ]
 default-members = [
     "glycin",

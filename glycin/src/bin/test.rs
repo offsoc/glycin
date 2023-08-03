@@ -4,7 +4,7 @@ use glycin::*;
 fn main() {
     dbg!(async_std::task::block_on(image_formats()));
 
-    let images = std::fs::read_dir("images/static").unwrap();
+    let images = std::fs::read_dir("images/svg").unwrap();
 
     for entry in images {
         eprintln!("{entry:?}");
@@ -20,6 +20,7 @@ fn main() {
             let frame = image.next_frame().await.unwrap();
 
             dbg!("read");
+            /*
             if let Ok(texture) = gdk::Texture::from_file(&file.clone()) {
                 dbg!("write tiff");
                 let mut extension = path.extension().unwrap().to_os_string();
@@ -37,6 +38,7 @@ fn main() {
             } else {
                 dbg!("no pixbuf support");
             }
+            */
 
             dbg!("write decoded png");
             let mut extension = path.extension().unwrap().to_os_string();
@@ -47,6 +49,7 @@ fn main() {
         });
     }
 
+    /*
     let images = std::fs::read_dir("images/animated").unwrap();
 
     for entry in images {
@@ -73,4 +76,5 @@ fn main() {
             }
         });
     }
+        */
 }

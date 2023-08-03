@@ -1,5 +1,5 @@
 [package]
-name = "glycin-jxl"
+name = "glycin-svg"
 version.workspace = true
 authors.workspace = true
 description.workspace = true
@@ -11,5 +11,6 @@ rust-version.workspace = true
 
 [dependencies]
 glycin-utils = { path = "../../glycin-utils/" }
-jxl-oxide = "0.3.0"
-safe-transmute = "0.11.2"
+rsvg = { git = "https://gitlab.gnome.org/GNOME/librsvg.git", branch = "bilelmoussaoui/update" }
+gio = "0.18"
+cairo = { package = "cairo-rs", version = "0.18" }

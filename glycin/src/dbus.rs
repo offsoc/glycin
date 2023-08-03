@@ -154,8 +154,11 @@ impl<'a> DecoderProcess<'a> {
         image_info.await.map_err(Into::into)
     }
 
-    pub async fn decode_frame(&self) -> Result<api::Frame, Error> {
-        let mut frame = self.decoding_instruction.decode_frame().await?;
+    pub async fn decode_frame(&self, frame_request: FrameRequest) -> Result<api::Frame, Error> {
+        let mut frame = self
+            .decoding_instruction
+            .decode_frame(frame_request)
+            .await?;
 
         let Texture::MemFd(fd) = &frame.texture;
         let raw_fd = fd.as_raw_fd();
@@ -233,7 +236,7 @@ const BUF_SIZE: usize = u16::MAX as usize;
 )]
 trait DecodingInstruction {
     async fn init(&self, message: DecodingRequest) -> Result<ImageInfo, RemoteError>;
-    async fn decode_frame(&self) -> Result<Frame, RemoteError>;
+    async fn decode_frame(&self, frame_request: FrameRequest) -> Result<Frame, RemoteError>;
 }
 
 const fn gdk_memory_format(format: MemoryFormat) -> gdk::MemoryFormat {
