@@ -85,6 +85,7 @@ pub struct ImageInfo {
     pub exif: Optional<Vec<u8>>,
     pub xmp: Optional<Vec<u8>>,
     pub transformations_applied: bool,
+    pub dimensions: Optional<String>,
 }
 
 impl ImageInfo {
@@ -96,6 +97,7 @@ impl ImageInfo {
             exif: None.into(),
             xmp: None.into(),
             transformations_applied: false,
+            dimensions: None.into(),
         }
     }
 }

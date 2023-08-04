@@ -46,21 +46,13 @@ pub fn thread(
 
     let (original_width, original_height) = svg_dimensions(&renderer);
 
-    let image_info = ImageInfo::new(original_width, original_height, String::from("SVG"));
+    let mut image_info = ImageInfo::new(original_width, original_height, String::from("SVG"));
+
+    image_info.dimensions = dimensions(renderer.intrinsic_dimensions()).into();
+
     info_send.send(Ok(image_info)).unwrap();
 
-    // TODO: Detailled dimensions info
-    /*
-                let intrisic_dimensions = renderer.intrinsic_dimensions();
-
-    tiles.set_original_dimensions_full(
-                    (original_width, original_height),
-                    ImageDimensionDetails::Svg((intrisic_dimensions.width, intrisic_dimensions.height)),
-                );
-                */
-
     while let Ok(instr) = instr_recv.recv() {
-        dbg!("INSTRUCTION");
         let (total_width, total_height) = instr.total_size;
 
         // librsvg does not currently support larger images
@@ -209,7 +201,10 @@ const fn memory_format() -> MemoryFormat {
     }
 }
 
-pub fn dimension_details(width: rsvg::Length, height: rsvg::Length) -> Option<String> {
+pub fn dimensions(intrisic_dimensions: rsvg::IntrinsicDimensions) -> Option<String> {
+    let width = intrisic_dimensions.width;
+    let height = intrisic_dimensions.height;
+
     if width.unit == rsvg::LengthUnit::Px && height.unit == rsvg::LengthUnit::Px {
         None
     } else {
