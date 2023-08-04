@@ -157,7 +157,7 @@ impl Decoder for ImgDecoder {
         let area = if let Some(clip) = *frame_request.clip {
             cairo::Rectangle::new(clip.0.into(), clip.1.into(), clip.2.into(), clip.3.into())
         } else {
-            cairo::Rectangle::new(0., 0., width.into(), height.into())
+            cairo::Rectangle::new(0., 0., total_size.0.into(), total_size.1.into())
         };
 
         let instr = Instruction { total_size, area };
@@ -206,5 +206,34 @@ const fn memory_format() -> MemoryFormat {
     #[cfg(target_endian = "big")]
     {
         MemoryFormat::A8r8g8b8
+    }
+}
+
+pub fn dimension_details(width: rsvg::Length, height: rsvg::Length) -> Option<String> {
+    if width.unit == rsvg::LengthUnit::Px && height.unit == rsvg::LengthUnit::Px {
+        None
+    } else {
+        // Percent is not stored as percentile
+        let width_factor = if width.unit == rsvg::LengthUnit::Percent {
+            100.
+        } else {
+            1.
+        };
+        let height_factor = if height.unit == rsvg::LengthUnit::Percent {
+            100.
+        } else {
+            1.
+        };
+
+        // Only show two digits
+        let width_n = (width.length * width_factor * 100.).round() / 100.;
+        let height_n = (height.length * height_factor * 100.).round() / 100.;
+
+        let width_unit = width.unit;
+        let height_unit = height.unit;
+
+        Some(format!(
+            "{width_n}\u{202F}{width_unit} \u{D7} {height_n}\u{202F}{height_unit}"
+        ))
     }
 }

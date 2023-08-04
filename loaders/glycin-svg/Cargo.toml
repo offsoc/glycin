@@ -11,6 +11,6 @@ rust-version.workspace = true
 
 [dependencies]
 glycin-utils = { path = "../../glycin-utils/" }
-rsvg = { git = "https://gitlab.gnome.org/GNOME/librsvg.git", branch = "bilelmoussaoui/update" }
+rsvg = { git = "https://gitlab.gnome.org/GNOME/librsvg.git", rev = "25659e38bace73a394033449f008810afd43b546" }
 gio = "0.18"
 cairo = { package = "cairo-rs", version = "0.18" }
