@@ -118,7 +118,7 @@ impl Decoder for ImgDecoder {
         Ok(image_info)
     }
 
-    fn decode_frame(&self) -> Result<Frame, DecoderError> {
+    fn decode_frame(&self, _frame_request: FrameRequest) -> Result<Frame, DecoderError> {
         let frame = if let Some(decoder) = std::mem::take(&mut *self.decoder.lock().unwrap()) {
             decoder.frame().context_failed()?
         } else if let Some((ref thread, ref recv)) = *self.thread.lock().unwrap() {
