@@ -1,7 +1,7 @@
 use crate::config;
 use crate::dbus::*;
 use gio::prelude::*;
-use glycin_utils::*;
+use glycin_utils::ImageInfo;
 use std::sync::OnceLock;
 
 pub use crate::config::MimeType;
