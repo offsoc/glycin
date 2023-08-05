@@ -5,6 +5,8 @@ use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::sync::OnceLock;
 
+use crate::dbus::Error;
+
 pub type MimeType = String;
 
 const CONFIG_FILE_EXT: &str = "conf";
@@ -20,16 +22,23 @@ pub struct Config {
 #[derive(Debug, Clone)]
 pub struct ImageDecoderConfig {
     pub exec: std::path::PathBuf,
+    pub expose_base_dir: bool,
 }
 
 impl Config {
-    pub async fn get() -> &'static Self {
+    pub async fn cached() -> &'static Self {
         if let Some(config) = CONFIG.get() {
             config
         } else {
             let config = Self::load().await;
             CONFIG.get_or_init(|| config)
         }
+    }
+
+    pub fn get(&self, mime_type: &MimeType) -> Result<&ImageDecoderConfig, Error> {
+        self.image_decoders
+            .get(mime_type.as_str())
+            .ok_or_else(|| Error::UnknownImageFormat(mime_type.to_string()))
     }
 
     async fn load() -> Self {
@@ -76,8 +85,15 @@ impl Config {
 
             if kind == Some("loader") {
                 if let Some(mime_type) = mime_type {
-                    if let Ok(exec) = keyfile.string(group.to_str().trim(), "exec") {
-                        let cfg = ImageDecoderConfig { exec: exec.into() };
+                    let group = group.to_str().trim();
+                    if let Ok(exec) = keyfile.string(group, "Exec") {
+                        let expose_base_dir =
+                            keyfile.boolean(group, "ExposeBaseDir").unwrap_or_default();
+
+                        let cfg = ImageDecoderConfig {
+                            exec: exec.into(),
+                            expose_base_dir,
+                        };
 
                         config.image_decoders.insert(mime_type.to_string(), cfg);
                     }

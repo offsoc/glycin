@@ -65,15 +65,22 @@ impl ImageRequest {
     }
 
     pub async fn request<'a>(self) -> Result<Image<'a>> {
-        let config = config::Config::get().await;
+        let config = config::Config::cached().await;
 
         let gfile_worker = GFileWorker::spawn(self.file.clone(), self.cancellable.clone());
         let mime_type = Self::guess_mime_type(&gfile_worker).await?;
+        let decoder_config = config.get(&mime_type)?;
 
         let sandbox_mechanism = if let Some(m) = self.sandbox_mechanism {
             m
         } else {
             SandboxMechanism::detect().await
+        };
+
+        let base_dir = if decoder_config.expose_base_dir {
+            self.file.parent().and_then(|x| x.path())
+        } else {
+            None
         };
 
         let process = DecoderProcess::new(
@@ -83,7 +90,8 @@ impl ImageRequest {
             self.cancellable.as_ref(),
         )
         .await?;
-        let info = process.init(gfile_worker).await?;
+
+        let info = process.init(gfile_worker, base_dir).await?;
 
         Ok(Image {
             process,
@@ -199,7 +207,7 @@ impl FrameRequest {
 
 /// Returns a list of mime types for the supported image formats
 pub async fn image_formats() -> Vec<MimeType> {
-    config::Config::get()
+    config::Config::cached()
         .await
         .image_decoders
         .keys()

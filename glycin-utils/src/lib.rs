@@ -66,7 +66,13 @@ impl DerefMut for SharedMemory {
 pub struct DecodingRequest {
     /// Source from which the loader reads the image data
     pub fd: zvariant::OwnedFd,
+    pub details: DecodingDetails,
+}
+
+#[derive(Deserialize, Serialize, Type, Debug)]
+pub struct DecodingDetails {
     pub mime_type: String,
+    pub base_dir: Optional<std::path::PathBuf>,
 }
 
 #[derive(Deserialize, Serialize, Type, Debug, Clone, Default)]
@@ -85,7 +91,8 @@ pub struct ImageInfo {
     pub exif: Optional<Vec<u8>>,
     pub xmp: Optional<Vec<u8>>,
     pub transformations_applied: bool,
-    pub dimensions: Optional<String>,
+    pub dimensions_text: Optional<String>,
+    pub dimensions_inch: Optional<(f64, f64)>,
 }
 
 impl ImageInfo {
@@ -97,7 +104,8 @@ impl ImageInfo {
             exif: None.into(),
             xmp: None.into(),
             transformations_applied: false,
-            dimensions: None.into(),
+            dimensions_text: None.into(),
+            dimensions_inch: None.into(),
         }
     }
 }
@@ -252,7 +260,8 @@ impl Communication {
 }
 
 pub trait Decoder: Send {
-    fn init(&self, stream: UnixStream, mime_type: String) -> Result<ImageInfo, DecoderError>;
+    fn init(&self, stream: UnixStream, details: DecodingDetails)
+        -> Result<ImageInfo, DecoderError>;
     fn decode_frame(&self, frame_request: FrameRequest) -> Result<Frame, DecoderError>;
 }
 
@@ -270,7 +279,7 @@ impl DecodingInstruction {
             .decoder
             .lock()
             .or(Err(RemoteError::InternalDecoderError))?
-            .init(stream, message.mime_type)?;
+            .init(stream, message.details)?;
 
         Ok(image_info)
     }

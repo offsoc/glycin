@@ -18,7 +18,11 @@ pub struct ImgDecoder {
 }
 
 impl Decoder for ImgDecoder {
-    fn init(&self, stream: UnixStream, _mime_type: String) -> Result<ImageInfo, DecoderError> {
+    fn init(
+        &self,
+        stream: UnixStream,
+        _details: DecodingDetails,
+    ) -> Result<ImageInfo, DecoderError> {
         let image = JxlImage::from_reader(stream).unwrap();
 
         let header = image.image_header();

@@ -13,7 +13,11 @@ pub struct ImgDecoder {
 }
 
 impl Decoder for ImgDecoder {
-    fn init(&self, mut stream: UnixStream, _mime_type: String) -> Result<ImageInfo, DecoderError> {
+    fn init(
+        &self,
+        mut stream: UnixStream,
+        _details: DecodingDetails,
+    ) -> Result<ImageInfo, DecoderError> {
         let mut data = Vec::new();
         let total_size = stream.read_to_end(&mut data).context_internal()?;
 

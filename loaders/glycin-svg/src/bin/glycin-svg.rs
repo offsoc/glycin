@@ -1,4 +1,5 @@
 use gio;
+use gio::prelude::*;
 use glycin_utils::anyhow::Context;
 use glycin_utils::*;
 use std::io::Cursor;
@@ -32,15 +33,15 @@ pub struct Instruction {
 
 pub fn thread(
     stream: UnixStream,
+    base_file: Option<gio::File>,
     info_send: Sender<Result<ImageInfo, DecoderError>>,
     frame_send: Sender<Result<Frame, DecoderError>>,
     instr_recv: Receiver<Instruction>,
 ) {
     let input_stream = unsafe { gio::UnixInputStream::take_fd(stream) };
 
-    // TODO: Base url
     let handle = rsvg::Loader::new()
-        .read_stream(&input_stream, gio::File::NONE, gio::Cancellable::NONE)
+        .read_stream(&input_stream, base_file.as_ref(), gio::Cancellable::NONE)
         .unwrap();
     let renderer = rsvg::CairoRenderer::new(&handle);
 
@@ -48,7 +49,8 @@ pub fn thread(
 
     let mut image_info = ImageInfo::new(original_width, original_height, String::from("SVG"));
 
-    image_info.dimensions = dimensions(renderer.intrinsic_dimensions()).into();
+    image_info.dimensions_text = dimensions_text(renderer.intrinsic_dimensions()).into();
+    image_info.dimensions_inch = dimensions_inch(renderer.intrinsic_dimensions()).into();
 
     info_send.send(Ok(image_info)).unwrap();
 
@@ -120,12 +122,21 @@ pub fn render(renderer: &rsvg::CairoRenderer, instr: Instruction) -> Result<Fram
 }
 
 impl Decoder for ImgDecoder {
-    fn init(&self, stream: UnixStream, _mime_type: String) -> Result<ImageInfo, DecoderError> {
+    fn init(
+        &self,
+        stream: UnixStream,
+        details: DecodingDetails,
+    ) -> Result<ImageInfo, DecoderError> {
         let (info_send, info_recv) = channel();
         let (frame_send, frame_recv) = channel();
         let (instr_send, instr_recv) = channel();
 
-        std::thread::spawn(move || thread(stream, info_send, frame_send, instr_recv));
+        let base_file = details
+            .base_dir
+            .as_ref()
+            .map(|x| gio::File::for_path(x).child("placeholder.svg"));
+
+        std::thread::spawn(move || thread(stream, base_file, info_send, frame_send, instr_recv));
         let image_info = info_recv.recv().unwrap()?;
 
         *self.thread.lock().unwrap() = Some(ImgDecoderDetails {
@@ -201,7 +212,7 @@ const fn memory_format() -> MemoryFormat {
     }
 }
 
-pub fn dimensions(intrisic_dimensions: rsvg::IntrinsicDimensions) -> Option<String> {
+pub fn dimensions_text(intrisic_dimensions: rsvg::IntrinsicDimensions) -> Option<String> {
     let width = intrisic_dimensions.width;
     let height = intrisic_dimensions.height;
 
@@ -230,5 +241,27 @@ pub fn dimensions(intrisic_dimensions: rsvg::IntrinsicDimensions) -> Option<Stri
         Some(format!(
             "{width_n}\u{202F}{width_unit} \u{D7} {height_n}\u{202F}{height_unit}"
         ))
+    }
+}
+
+pub fn dimensions_inch(intrisic_dimensions: rsvg::IntrinsicDimensions) -> Option<(f64, f64)> {
+    let width = intrisic_dimensions.width;
+    let height = intrisic_dimensions.height;
+
+    if let (Some(w), Some(h)) = (dimension_inch(width), dimension_inch(height)) {
+        Some((w, h))
+    } else {
+        None
+    }
+}
+
+pub fn dimension_inch(length: rsvg::Length) -> Option<f64> {
+    match length.unit {
+        rsvg::LengthUnit::In => Some(length.length),
+        rsvg::LengthUnit::Cm => Some(length.length / 2.54),
+        rsvg::LengthUnit::Mm => Some(length.length / 25.4),
+        rsvg::LengthUnit::Pt => Some(length.length * 72.),
+        rsvg::LengthUnit::Pc => Some(length.length / 12. * 72.),
+        _ => None,
     }
 }

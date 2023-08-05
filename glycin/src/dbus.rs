@@ -31,12 +31,7 @@ impl<'a> DecoderProcess<'a> {
         sandbox_mechanism: SandboxMechanism,
         cancellable: &gio::Cancellable,
     ) -> Result<DecoderProcess<'a>, Error> {
-        let decoder_bin = config
-            .image_decoders
-            .get(mime_type.as_str())
-            .ok_or_else(|| Error::UnknownImageFormat(mime_type.to_string()))?
-            .exec
-            .clone();
+        let decoder_bin = config.get(&mime_type)?.exec.clone();
 
         let (unix_stream, fd_decoder) = std::os::unix::net::UnixStream::pair()?;
         unix_stream
@@ -130,7 +125,11 @@ impl<'a> DecoderProcess<'a> {
         })
     }
 
-    pub async fn init(&self, gfile_worker: GFileWorker) -> Result<ImageInfo, Error> {
+    pub async fn init(
+        &self,
+        gfile_worker: GFileWorker,
+        base_dir: Option<std::path::PathBuf>,
+    ) -> Result<ImageInfo, Error> {
         let (remote_reader, writer) = std::os::unix::net::UnixStream::pair()?;
 
         gfile_worker.write_to(writer)?;
@@ -138,9 +137,14 @@ impl<'a> DecoderProcess<'a> {
         let fd = unsafe { zvariant::OwnedFd::from_raw_fd(remote_reader.as_raw_fd()) };
         let mime_type = self.mime_type.clone();
 
+        let details = DecodingDetails {
+            mime_type,
+            base_dir: base_dir.into(),
+        };
+
         let image_info = self
             .decoding_instruction
-            .init(DecodingRequest { fd, mime_type })
+            .init(DecodingRequest { fd, details })
             .shared();
 
         let reader_error = gfile_worker.error();
