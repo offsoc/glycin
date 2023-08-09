@@ -1,0 +1,8 @@
+## 0.1.beta.1
+
+- Update dependencies
+- Update image-rs to 0.24.7
+    * WebP/TIFF: Adds ICC profile support to TIFF and WebP
+    * WebP: Fixes frequent decoding issues
+- WebP: Use transparent background instead of color suggested by image in
+  animations
