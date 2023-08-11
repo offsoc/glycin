@@ -1,3 +1,7 @@
+## 0.1.beta.2
+
+- Use (outdated) librsvg from crates.io instead of git for now
+
 ## 0.1.beta.1
 
 - Update dependencies
