@@ -184,7 +184,13 @@ impl<'a> DecoderProcess<'a> {
             // This mmap would have the wrong size after ftruncate
             drop(mmap);
 
-            nix::unistd::ftruncate(raw_fd, (frame.height * frame.stride).try_i64()?).unwrap();
+            nix::unistd::ftruncate(
+                raw_fd,
+                (frame.height * frame.stride)
+                    .try_into()
+                    .map_err(|_| ConversionTooLargerError)?,
+            )
+            .unwrap();
 
             // Need a new mmap with correct size
             unsafe { memmap::MmapMut::map_mut(raw_fd) }?
