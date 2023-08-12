@@ -160,7 +160,9 @@ impl ImageRsDecoder<Reader> {
             }
             "image/gif" => Self::Gif(codecs::gif::GifDecoder::new(data).context_failed()?),
             //"image/vnd.radiance" => Self::Hdr(codecs::hdr::HdrDecoder::new(data).context_failed()?),
-            "image/x-icon" => Self::Ico(codecs::ico::IcoDecoder::new(data).context_failed()?),
+            "image/vnd.microsoft.icon" => {
+                Self::Ico(codecs::ico::IcoDecoder::new(data).context_failed()?)
+            }
             "image/jpeg" => Self::Jpeg(codecs::jpeg::JpegDecoder::new(data).context_failed()?),
             "image/x-exr" => {
                 Self::OpenExr(codecs::openexr::OpenExrDecoder::new(data).context_failed()?)
