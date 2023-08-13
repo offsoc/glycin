@@ -9,10 +9,12 @@ else
 endif
 
 target_dir = meson.project_build_root() / 'src'
+manifest = meson.project_source_root() / 'Cargo.toml'
 
 cargo_options = [
   '--target-dir', target_dir,
   '--profile', profile,
+  '--manifest-path', manifest,
 ]
 
 cargo_env = {
