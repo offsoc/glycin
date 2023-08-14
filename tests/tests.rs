@@ -2,8 +2,8 @@ use gdk::prelude::*;
 use std::path::{Path, PathBuf};
 
 #[test]
- fn color() {
-    async_std::task::block_on(test_dir("images/color"));
+fn color() {
+    async_std::task::block_on(test_dir("test-images/images/color"));
 }
 
 async fn test_dir(dir: impl AsRef<Path>) {

@@ -1,3 +1,7 @@
+variables:
+  # Clone test-images
+  GIT_SUBMODULE_STRATEGY: recursive
+
 .install_dependencies:
   before_script:
     - apt update
@@ -17,6 +21,7 @@ i386:
   interruptible: true
   script:
     - meson setup builddir
+    - meson install -C builddir
     - meson test -vC builddir
 
 x86_64:
@@ -25,4 +30,5 @@ x86_64:
   interruptible: true
   script:
     - meson setup builddir
+    - meson install -C builddir
     - meson test -vC builddir
