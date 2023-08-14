@@ -16,7 +16,8 @@ i18n = import ('i18n')
 compat_version = '0+'
 
 libexecdir = get_option('prefix') / get_option('libexecdir') / meson.project_name() / compat_version
-datadir = get_option('prefix') / get_option('datadir') / meson.project_name() / compat_version
+datadir = get_option('prefix') / get_option('datadir')
+glycin_datadir = datadir / meson.project_name() / compat_version
 
 meson.add_dist_script(
   'build-aux/dist-vendor.sh',

@@ -20,10 +20,8 @@ resolver = "2"
 members = [
     "glycin",
     "glycin-utils",
-    "loaders/glycin-image-rs",
-    "loaders/glycin-heif",
-    "loaders/glycin-jxl",
-    "loaders/glycin-svg",
+    "loaders/*",
+    "tests",
 ]
 default-members = [
     "glycin",

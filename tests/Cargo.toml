@@ -1,0 +1,17 @@
+[package]
+name = "tests"
+publish = false
+
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dev-dependencies]
+glycin = { path = "../glycin" }
+gio = "0.18.1"
+async-std = "1.12.0"
+gdk = { package = "gdk4", version = "0.7.1" }
+
+[[test]]
+name = "tests"
+path = "tests.rs"

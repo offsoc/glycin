@@ -8,15 +8,16 @@
     - git clone --depth 1 https://gitlab.gnome.org/GNOME/gtk.git
     - meson setup -Dmedia-gstreamer=disabled -Dbuild-testsuite=false -Dbuild-examples=false -Dbuild-tests=false gtk/builddir gtk
     - ninja install -C gtk/builddir
-
+  artifacts:
+    paths:
+      - 'tests/failures'
 i386:
   image: rust@sha256:51f136e34f1cbb1837a7e1e5e6de581aa7a6a383a52606cd3248653beb11789e
   extends: .install_dependencies
   interruptible: true
   script:
     - meson setup builddir
-    - ninja -C builddir
-    - cargo b -p glycin
+    - meson test -vC builddir
 
 x86_64:
   image: rust:bookworm
@@ -24,5 +25,4 @@ x86_64:
   interruptible: true
   script:
     - meson setup builddir
-    - ninja -C builddir
-    - cargo b -p glycin
+    - meson test -vC builddir

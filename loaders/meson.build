@@ -8,11 +8,10 @@ else
   profile = 'dev'
 endif
 
-target_dir = meson.project_build_root() / 'src'
+target_dir = meson.project_build_root() / 'cargo_target'
 manifest = meson.project_source_root() / 'Cargo.toml'
 
 cargo_options = [
-  '--target-dir', target_dir,
   '--profile', profile,
   '--manifest-path', manifest,
 ]
@@ -41,6 +40,7 @@ foreach loader : get_option('loaders')
     env: cargo_env,
     command: [
       cargo_bin, 'build',
+      '--target-dir', target_dir / 'loaders',
       [cargo_options, [ '--package', loader ]],
     ],
   )
@@ -55,7 +55,7 @@ foreach loader : get_option('loaders')
     output: loader,
     command: [
       'cp',
-      target_dir / rust_target / loader,
+      target_dir / 'loaders' / rust_target / loader,
       '@OUTPUT@',
     ],
   )
@@ -70,6 +70,22 @@ foreach loader : get_option('loaders')
       output: loader + '.conf',
       po_dir: '..' / 'po',
       install: true,
-      install_dir: datadir / 'conf.d'
+      install_dir: glycin_datadir / 'conf.d'
   )
 endforeach
+
+test(
+  'cargo-test',
+  cargo_bin,
+  args: [
+    'test',
+    '--workspace',
+    '--target-dir', target_dir / 'tests',
+    cargo_options,
+    '--',
+    '--test-threads=1',
+  ],
+  env: { 'XDG_DATA_HOME': datadir },
+  is_parallel: false,
+  timeout: 1800,
+)
