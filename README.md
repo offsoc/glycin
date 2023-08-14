@@ -35,10 +35,10 @@ The configs are glib KeyFiles of the the form
 
 ```ini
 [loader:image/png]
-exec = /usr/libexec/glycin/0+/glycin-image-rs
+Exec = /usr/libexec/glycin/0+/glycin-image-rs
 ```
 
-Where the part behind `loader` is a mime-type and the value of `exec` can be any executable path.
+Where the part behind `loader` is a mime-type and the value of `Exec` can be any executable path.
 
 ### Existing compatibility versions
 
