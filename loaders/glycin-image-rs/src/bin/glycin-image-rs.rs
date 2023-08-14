@@ -154,7 +154,7 @@ impl ImageRsDecoder<Reader> {
     fn new(data: Reader, mime_type: &str) -> Result<Self, DecoderError> {
         Ok(match mime_type {
             "image/bmp" => Self::Bmp(codecs::bmp::BmpDecoder::new(data).context_failed()?),
-            "image/vnd-ms.dds" => Self::Dds(codecs::dds::DdsDecoder::new(data).context_failed()?),
+            "image/x-dds" => Self::Dds(codecs::dds::DdsDecoder::new(data).context_failed()?),
             "image/x-ff" => {
                 Self::Farbfeld(codecs::farbfeld::FarbfeldDecoder::new(data).context_failed()?)
             }
