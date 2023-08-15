@@ -20,7 +20,7 @@ i386:
   extends: .install_dependencies
   interruptible: true
   script:
-    - meson setup builddir
+    - meson setup -Dprofile=dev --prefix "$(pwd)/output" builddir
     - meson install -C builddir
     - meson test -vC builddir
 
@@ -29,6 +29,6 @@ x86_64:
   extends: .install_dependencies
   interruptible: true
   script:
-    - meson setup builddir
+    - meson setup -Dprofile=dev --prefix "$(pwd)/output" builddir
     - meson install -C builddir
     - meson test -vC builddir

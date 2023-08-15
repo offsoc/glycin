@@ -31,7 +31,7 @@ impl<'a> DecoderProcess<'a> {
         sandbox_mechanism: SandboxMechanism,
         cancellable: &gio::Cancellable,
     ) -> Result<DecoderProcess<'a>, Error> {
-        let decoder_bin = config.get(&mime_type)?.exec.clone();
+        let decoder_bin = config.get(mime_type)?.exec.clone();
 
         let (unix_stream, fd_decoder) = std::os::unix::net::UnixStream::pair()?;
         unix_stream
