@@ -199,6 +199,34 @@ impl MemoryFormat {
             MemoryFormat::G16 => MemoryFormatBytes::B2,
         }
     }
+
+    pub const fn n_channels(self) -> u8 {
+        match self {
+            MemoryFormat::B8g8r8a8Premultiplied => 4,
+            MemoryFormat::A8r8g8b8Premultiplied => 4,
+            MemoryFormat::R8g8b8a8Premultiplied => 4,
+            MemoryFormat::B8g8r8a8 => 4,
+            MemoryFormat::A8r8g8b8 => 4,
+            MemoryFormat::R8g8b8a8 => 4,
+            MemoryFormat::A8b8g8r8 => 4,
+            MemoryFormat::R8g8b8 => 3,
+            MemoryFormat::B8g8r8 => 3,
+            MemoryFormat::R16g16b16 => 3,
+            MemoryFormat::R16g16b16a16Premultiplied => 4,
+            MemoryFormat::R16g16b16a16 => 4,
+            MemoryFormat::R16g16b16Float => 3,
+            MemoryFormat::R16g16b16a16Float => 4,
+            MemoryFormat::R32g32b32Float => 3,
+            MemoryFormat::R32g32b32a32FloatPremultiplied => 4,
+            MemoryFormat::R32g32b32a32Float => 4,
+            MemoryFormat::G8a8Premultiplied => 2,
+            MemoryFormat::G8a8 => 2,
+            MemoryFormat::G8 => 1,
+            MemoryFormat::G16a16Premultiplied => 2,
+            MemoryFormat::G16a16 => 2,
+            MemoryFormat::G16 => 1,
+        }
+    }
 }
 
 pub enum MemoryFormatBytes {

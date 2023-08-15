@@ -1091,6 +1091,7 @@ dependencies = [
  "gio",
  "glycin-utils",
  "lcms2",
+ "lcms2-sys",
  "memfd",
  "memmap2",
  "nix",
