@@ -86,7 +86,10 @@ impl<'a> DecoderProcess<'a> {
             command.arg(arg);
         }
 
-        let mut subprocess = command.spawn()?;
+        let cmd_debug = format!("{:?}", command);
+        let mut subprocess = command
+            .spawn()
+            .map_err(|x| Error::SpawnError(cmd_debug, Arc::new(x.into())))?;
 
         let guid = zbus::Guid::generate();
         let dbus_result = zbus::ConnectionBuilder::unix_stream(unix_stream)
@@ -381,6 +384,7 @@ pub enum Error {
     UnknownImageFormat(String),
     PrematureExit(ExitStatus),
     ConversionTooLargerError,
+    SpawnError(String, Arc<std::io::Error>),
 }
 
 impl Error {
@@ -445,6 +449,7 @@ impl std::fmt::Display for Error {
                 write!(f, "Loader process exited early: {status}")
             }
             err @ Self::ConversionTooLargerError => err.fmt(f),
+            Self::SpawnError(cmd, err) => write!(f, "Could not spawn `{cmd}`: {err}"),
         }
     }
 }
