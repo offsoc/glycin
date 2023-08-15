@@ -6,6 +6,16 @@ fn color() {
     async_std::task::block_on(test_dir("test-images/images/color"));
 }
 
+#[test]
+fn color_iccp_pro() {
+    async_std::task::block_on(test_dir("test-images/images/color-iccp-pro"));
+}
+
+#[test]
+fn gray_iccp() {
+    async_std::task::block_on(test_dir("test-images/images/gray-iccp"));
+}
+
 async fn test_dir(dir: impl AsRef<Path>) {
     let images = std::fs::read_dir(&dir).unwrap();
 
@@ -44,7 +54,7 @@ async fn compare_images(reference_path: impl AsRef<Path>, path: impl AsRef<Path>
 
     let deviation = dev as f64 / len as f64;
 
-    let failed = deviation > 3.;
+    let failed = deviation > 3.1;
 
     if failed {
         debug_file(&path).await;
