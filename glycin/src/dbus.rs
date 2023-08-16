@@ -171,6 +171,17 @@ impl<'a> DecoderProcess<'a> {
         let raw_fd = fd.as_raw_fd();
         let mut mmap = unsafe { memmap::MmapMut::map_mut(raw_fd) }?;
 
+        if mmap.len() < (frame.stride * frame.height).try_usize()? {
+            return Err(Error::TextureTooSmall {
+                texture_size: mmap.len(),
+                frame: format!("{:?}", frame),
+            });
+        }
+
+        if frame.stride < frame.width * frame.memory_format.n_bytes().u32() {
+            return Err(Error::StrideTooSmall(format!("{:?}", frame)));
+        }
+
         // Align stride with pixel size if necessary
         let mut mmap = if frame.stride % frame.memory_format.n_bytes().u32() == 0 {
             mmap
@@ -385,6 +396,8 @@ pub enum Error {
     PrematureExit(ExitStatus),
     ConversionTooLargerError,
     SpawnError(String, Arc<std::io::Error>),
+    TextureTooSmall { texture_size: usize, frame: String },
+    StrideTooSmall(String),
 }
 
 impl Error {
@@ -450,6 +463,14 @@ impl std::fmt::Display for Error {
             }
             err @ Self::ConversionTooLargerError => err.fmt(f),
             Self::SpawnError(cmd, err) => write!(f, "Could not spawn `{cmd}`: {err}"),
+            Self::TextureTooSmall {
+                texture_size,
+                frame,
+            } => write!(
+                f,
+                "Texture is only {texture_size} but was announced differently: {frame}"
+            ),
+            Self::StrideTooSmall(frame) => write!(f, "Stride is smaller than possible: {frame}"),
         }
     }
 }
