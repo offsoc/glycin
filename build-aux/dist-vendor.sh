@@ -15,6 +15,8 @@ for toml in $(find loaders/ -name Cargo.toml); do
   sed -i "s/path = \"..\/..\/glycin-utils\/\"/version = \"$VERSION\"/g" "$toml"
 done
 
+sed -i "s/path = \"..\/glycin\/\"/version = \"$VERSION\"/g" tests/Cargo.toml
+
 # Vendor crates.io dependencies
 mkdir .cargo
 cargo vendor | sed 's/^directory = ".*"/directory = "vendor"/g' > .cargo/config
