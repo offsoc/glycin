@@ -1,3 +1,10 @@
+## 0.1.beta.3
+
+- Add consitency checks for stride and texture size
+- Fix applying ICC profiles to grayscale images
+- DDS/ICO: Fixed filetype detection in image-rs
+- Fix build on some 32 bit architectures
+
 ## 0.1.beta.2
 
 - Use (outdated) librsvg from crates.io instead of git for now
