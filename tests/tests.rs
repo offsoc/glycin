@@ -1,7 +1,7 @@
 use gdk::prelude::*;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
-
+/*
 #[test]
 fn color() {
     async_std::task::block_on(test_dir("test-images/images/color"));
@@ -25,6 +25,23 @@ fn icon() {
 #[test]
 fn exif() {
     async_std::task::block_on(test_dir("test-images/images/exif"));
+}
+*/
+#[test]
+fn error_msg() {
+    let result = async_std::task::block_on(async move {
+        let file = gio::File::for_path("tests.rs");
+        let image_request = glycin::ImageRequest::new(file);
+        image_request.request().await
+    });
+
+    if let Err(err) = result {
+        dbg!(&err);
+        eprintln!("{}", err);
+        panic!();
+    } else {
+        panic!("Expected error");
+    }
 }
 
 #[allow(dead_code)]

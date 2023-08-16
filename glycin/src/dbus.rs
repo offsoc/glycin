@@ -456,7 +456,7 @@ impl std::fmt::Display for Error {
                 write!(f, "Internal communication was unexpectedly canceled")
             }
             Self::UnknownImageFormat(mime_type) => {
-                write!(f, "Unknown image format: {mime_type}")
+                f.write_str(&gettext_f("Unknown image format “{}”", &[mime_type]))
             }
             Self::PrematureExit(status) => {
                 write!(f, "Loader process exited early: {status}")

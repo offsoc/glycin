@@ -10,7 +10,6 @@ pub use anyhow;
 pub use std::os::unix::net::UnixStream;
 
 use anyhow::Context;
-use gettextrs::gettext;
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{self, Optional, Type};
 
@@ -461,3 +460,36 @@ pub trait SafeConversion:
 impl SafeConversion for usize {}
 impl SafeConversion for u32 {}
 impl SafeConversion for i32 {}
+
+pub fn gettext(msgid: impl Into<String>) -> String {
+    let current_domain = gettextrs::getters::current_textdomain();
+    let string = gettextrs::gettext(msgid);
+
+    if let Err(err) = gettextrs::textdomain("glycin") {
+        eprintln!("Failed to switch to gettext domain 'glycin': {err}",);
+    }
+
+    if let Ok(domain) = current_domain {
+        if let Err(err) = gettextrs::textdomain(domain.clone()) {
+            eprintln!(
+                "Failed to switch to gettext domain '{}': {err}",
+                String::from_utf8_lossy(&domain)
+            );
+        }
+    }
+
+    string
+}
+
+pub fn gettext_f(format: impl Into<String>, args: &[&str]) -> String {
+    let s = gettext(format);
+    freplace(s, args)
+}
+
+fn freplace(mut s: String, args: &[&str]) -> String {
+    for arg in args {
+        s = s.replacen("{}", arg, 1);
+    }
+
+    s
+}
