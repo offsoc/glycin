@@ -16,6 +16,11 @@ fn gray_iccp() {
     async_std::task::block_on(test_dir("test-images/images/gray-iccp"));
 }
 
+#[test]
+fn icon() {
+    async_std::task::block_on(test_dir("test-images/images/icon"));
+}
+
 async fn test_dir(dir: impl AsRef<Path>) {
     let images = std::fs::read_dir(&dir).unwrap();
 
