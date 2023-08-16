@@ -89,7 +89,7 @@ impl<'a> DecoderProcess<'a> {
         let cmd_debug = format!("{:?}", command);
         let mut subprocess = command
             .spawn()
-            .map_err(|x| Error::SpawnError(cmd_debug, Arc::new(x.into())))?;
+            .map_err(|err| Error::SpawnError(cmd_debug, Arc::new(err)))?;
 
         let guid = zbus::Guid::generate();
         let dbus_result = zbus::ConnectionBuilder::unix_stream(unix_stream)

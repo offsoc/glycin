@@ -1,4 +1,3 @@
-use gio;
 use gio::prelude::*;
 use glycin_utils::anyhow::Context;
 use glycin_utils::*;
@@ -85,8 +84,8 @@ pub fn render(renderer: &rsvg::CairoRenderer, instr: Instruction) -> Result<Fram
         .render_document(
             &context,
             &cairo::Rectangle::new(
-                -area.x() as f64,
-                -area.y() as f64,
+                -area.x(),
+                -area.y(),
                 total_width as f64,
                 total_height as f64,
             ),

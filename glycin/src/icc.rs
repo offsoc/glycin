@@ -56,7 +56,7 @@ fn transform<F: Copy>(
     let target_profile = if memory_format.n_channels() > 2 {
         lcms2::Profile::new_srgb()
     } else {
-        lcms2::Profile::new_gray(&lcms2_sys::ffi::CIExyY::d50(), &lcms2::ToneCurve::new(2.2))
+        lcms2::Profile::new_gray(lcms2_sys::ffi::CIExyY::d50(), &lcms2::ToneCurve::new(2.2))
             .unwrap()
     };
 
