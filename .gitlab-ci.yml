@@ -13,6 +13,7 @@ variables:
     - meson setup -Dmedia-gstreamer=disabled -Dbuild-testsuite=false -Dbuild-examples=false -Dbuild-tests=false gtk/builddir gtk
     - ninja install -C gtk/builddir
   artifacts:
+    when: always
     paths:
       - tests/failures
       - builddir/meson-logs
@@ -21,6 +22,7 @@ i386:
   extends: .install_dependencies
   interruptible: true
   script:
+    - export LD_LIBRARY_PATH=/usr/local/lib/i386-linux-gnu/
     - meson setup -Dprofile=dev builddir
     - meson install -C builddir
     - meson test -vC builddir
@@ -30,6 +32,7 @@ x86_64:
   extends: .install_dependencies
   interruptible: true
   script:
+    - export LD_LIBRARY_PATH=/usr/local/lib/x86_64-linux-gnu/
     - meson setup -Dprofile=dev builddir
     - meson install -C builddir
     - meson test -vC builddir
