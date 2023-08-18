@@ -67,6 +67,8 @@ impl<'a> DecoderProcess<'a> {
                         "--watch-bus",
                         // change working directory to something that exists
                         "--directory=/",
+                        "--share-pids",
+                        "--expose-pids",
                     ],
                     Some(decoder_bin),
                 )
