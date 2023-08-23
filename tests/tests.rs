@@ -1,4 +1,5 @@
 use gdk::prelude::*;
+use std::ffi::OsString;
 use std::path::{Path, PathBuf};
 
 #[test]
@@ -43,6 +44,12 @@ impl TestResult {
 async fn test_dir(dir: impl AsRef<Path>) {
     let images = std::fs::read_dir(&dir).unwrap();
 
+    let skip_ext: Vec<_> = option_env!("GLYCIN_TEST_SKIP_EXT")
+        .unwrap_or_default()
+        .split(|x| x == ',')
+        .map(OsString::from)
+        .collect();
+
     let mut reference_path = dir.as_ref().to_path_buf();
     reference_path.set_extension("png");
 
@@ -50,6 +57,10 @@ async fn test_dir(dir: impl AsRef<Path>) {
     let mut list = Vec::new();
     for entry in images {
         let path = entry.unwrap().path();
+
+        if skip_ext.contains(&path.extension().unwrap_or_default().into()) {
+            continue;
+        }
 
         let result = compare_images(&reference_path, &path).await;
 

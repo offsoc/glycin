@@ -8,6 +8,15 @@ else
   profile = 'dev'
 endif
 
+test_skip_ext = ''
+
+foreach ext : get_option('test_skip_ext')
+  if test_skip_ext != ''
+    test_skip_ext += ','
+  endif
+  test_skip_ext += ext
+endforeach
+
 target_dir = meson.project_build_root() / 'cargo_target'
 manifest = meson.project_source_root() / 'Cargo.toml'
 
@@ -85,7 +94,7 @@ test(
     '--',
     '--test-threads=1',
   ],
-  env: { 'XDG_DATA_HOME': datadir },
+  env: { 'XDG_DATA_HOME': datadir, 'GLYCIN_TEST_SKIP_EXT': test_skip_ext },
   is_parallel: false,
   timeout: 1800,
 )

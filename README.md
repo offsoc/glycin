@@ -80,3 +80,9 @@ The following features are supported by the glycin loaders provided in the [load
 | —      | Not available for this format                  |
 | ？      | Unclear if supported by format, needs research |
 | *      | Unclear if used in practice, needs research    |
+
+## Building and Testing
+
+- The `-Dloaders` option allows to only build certain loaders.
+- The `-Dtest_skip_ext` option allows to skip certain image filename extensions during tests. The `-Dtest_skip_ext=heic` might be needed if x265 is not available.
+

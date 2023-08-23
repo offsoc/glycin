@@ -23,3 +23,8 @@ option(
     'glycin-svg',
   ],
 )
+option(
+  'test_skip_ext',
+  type: 'array',
+  description: 'Image filename extensions, exlcuding dots, to skip during tests.'
+)

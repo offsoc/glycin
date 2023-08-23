@@ -43,7 +43,7 @@ impl Decoder for ImgDecoder {
 
     fn decode_frame(&self, _frame_request: FrameRequest) -> Result<Frame, DecoderError> {
         let context = std::mem::take(&mut *self.decoder.lock().unwrap()).context_internal()?;
-        decode(context, &self.mime_type.get().unwrap())
+        decode(context, self.mime_type.get().unwrap())
     }
 }
 
