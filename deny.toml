@@ -1,0 +1,10 @@
+[advisories]
+unmaintained = "deny"
+yanked = "deny"
+ignore = [
+    #"RUSTSEC-0000-0000",
+]
+
+[licenses]
+allow-osi-fsf-free = "either"
+copyleft = "allow"
