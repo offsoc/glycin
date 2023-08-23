@@ -1,8 +1,10 @@
 use glycin_utils::*;
 use libheif_rs::{ColorProfile, ColorSpace, HeifContext, LibHeif, RgbChroma, StreamReader};
+use std::cell::OnceCell;
 use std::io::Cursor;
 use std::io::Read;
 use std::sync::Mutex;
+
 fn main() {
     Communication::spawn(ImgDecoder::default());
 }
@@ -10,13 +12,14 @@ fn main() {
 #[derive(Default)]
 pub struct ImgDecoder {
     pub decoder: Mutex<Option<HeifContext<'static>>>,
+    pub mime_type: OnceCell<String>,
 }
 
 impl Decoder for ImgDecoder {
     fn init(
         &self,
         mut stream: UnixStream,
-        _details: DecodingDetails,
+        details: DecodingDetails,
     ) -> Result<ImageInfo, DecoderError> {
         let mut data = Vec::new();
         let total_size = stream.read_to_end(&mut data).context_internal()?;
@@ -34,16 +37,17 @@ impl Decoder for ImgDecoder {
         image_info.transformations_applied = true;
 
         *self.decoder.lock().unwrap() = Some(context);
+        let _ = self.mime_type.set(details.mime_type);
         Ok(image_info)
     }
 
     fn decode_frame(&self, _frame_request: FrameRequest) -> Result<Frame, DecoderError> {
         let context = std::mem::take(&mut *self.decoder.lock().unwrap()).context_internal()?;
-        decode(context)
+        decode(context, &self.mime_type.get().unwrap())
     }
 }
 
-fn decode(context: HeifContext) -> Result<Frame, DecoderError> {
+fn decode(context: HeifContext, mime_type: &str) -> Result<Frame, DecoderError> {
     let handle = context.primary_image_handle().context_failed()?;
 
     let rgb_chroma = if handle.luma_bits_per_pixel() > 8 {
@@ -77,7 +81,7 @@ fn decode(context: HeifContext) -> Result<Frame, DecoderError> {
 
     let mut image = match image_result {
         Err(err) if matches!(err.sub_code, libheif_rs::HeifErrorSubCode::UnsupportedCodec) => {
-            return Err(DecoderError::UnsupportedImageFormat("".into()));
+            return Err(DecoderError::UnsupportedImageFormat(mime_type.to_string()));
         }
         image => image.context_failed()?,
     };
