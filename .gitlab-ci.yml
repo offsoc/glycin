@@ -34,3 +34,10 @@ x86_64:
     - export LD_LIBRARY_PATH=/usr/local/lib/x86_64-linux-gnu/
     - meson setup -Dprofile=dev builddir
     - meson test -vC builddir
+
+cargo-deny:
+  interruptible: true
+  image: rust
+  script:
+    - cargo install cargo-deny
+    - cargo deny check
