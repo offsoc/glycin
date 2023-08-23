@@ -85,4 +85,4 @@ The following features are supported by the glycin loaders provided in the [load
 
 - The `-Dloaders` option allows to only build certain loaders.
 - The `-Dtest_skip_ext` option allows to skip certain image filename extensions during tests. The `-Dtest_skip_ext=heic` might be needed if x265 is not available.
-
+- Running integration tests requires the glycin loaders to be installed. By default this is done by `meson test` automatically. This behavior can be changed by setting `-Dtest_skip_install=true`.

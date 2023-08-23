@@ -83,6 +83,14 @@ foreach loader : get_option('loaders')
   )
 endforeach
 
+if not get_option('test_skip_install')
+  test(
+    'test-install',
+    find_program('meson'),
+    args: ['install', '-C', meson.project_build_root()],
+  )
+endif
+
 test(
   'cargo-test',
   cargo_bin,

@@ -24,7 +24,6 @@ i386:
   script:
     - export LD_LIBRARY_PATH=/usr/local/lib/i386-linux-gnu/
     - meson setup -Dprofile=dev builddir
-    - meson install -C builddir
     - meson test -vC builddir
 
 x86_64:
@@ -34,5 +33,4 @@ x86_64:
   script:
     - export LD_LIBRARY_PATH=/usr/local/lib/x86_64-linux-gnu/
     - meson setup -Dprofile=dev builddir
-    - meson install -C builddir
     - meson test -vC builddir

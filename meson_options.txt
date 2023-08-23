@@ -22,9 +22,16 @@ option(
     'glycin-jxl',
     'glycin-svg',
   ],
+  description: 'List of loaders to build.',
 )
 option(
   'test_skip_ext',
   type: 'array',
   description: 'Image filename extensions, exlcuding dots, to skip during tests.'
+)
+option(
+  'test_skip_install',
+  type: 'boolean',
+  value: false,
+  description: 'Do not run meson install before running tests.'
 )
