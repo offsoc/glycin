@@ -1,5 +1,5 @@
 [workspace.package]
-version = "0.1.0-beta.3"
+version = "0.1.0-beta.4"
 authors = ["Sophie Herold"]
 description = "Sandboxed image rendering"
 license = "MPL-2.0 OR LGPL-2.1-or-later"

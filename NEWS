@@ -1,3 +1,13 @@
+## 0.1.beta.4
+
+- Relicense under MPL-2.0 OR LGPL-2.1-or-later
+- Add symlinks for license files in crates
+- Add cairo dependency for svg loader
+- HEIC: Fix filetype detection in config
+- tests: Add HEIC tests
+- tests: Add option to skip image formats in tests
+- tests: Run required install before tests (can be disabled)
+
 ## 0.1.beta.3
 
 - Add consitency checks for stride and texture size
