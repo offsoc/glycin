@@ -1,13 +1,14 @@
-#!/bin/sh -e
+#!/bin/sh -ex
 
 cd "$MESON_PROJECT_DIST_ROOT"
 
-
 # Remove crates.io packaged part
-sed -i '/"glycin"/d' Cargo.toml
+sed -i 's/"glycin",\?//' Cargo.toml
 rm -r glycin
-sed -i '/"glycin-utils"/d' Cargo.toml
+sed -i 's/"glycin-utils",\?//' Cargo.toml
 rm -r glycin-utils
+
+cat Cargo.toml
 
 # Use crates.io libraries
 VERSION="$($MESON_PROJECT_SOURCE_ROOT/build-aux/crates-version.py)"
