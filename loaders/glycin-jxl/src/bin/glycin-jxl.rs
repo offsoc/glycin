@@ -39,16 +39,14 @@ impl Decoder for ImgDecoder {
     }
 
     fn decode_frame(&self, _frame_request: FrameRequest) -> Result<Frame, DecoderError> {
-        let Some(mut image) =  std::mem::take(&mut *self.decoder.lock().unwrap())
-
-         else {
+        let Some(mut image) = std::mem::take(&mut *self.decoder.lock().unwrap()) else {
             return Err(DecoderError::InternalDecoderError);
         };
 
         let mut renderer = image.renderer();
 
-        let RenderResult::Done(render) = renderer.render_next_frame().unwrap()  else {
-            return Err(DecoderError::InternalDecoderError)
+        let RenderResult::Done(render) = renderer.render_next_frame().unwrap() else {
+            return Err(DecoderError::InternalDecoderError);
         };
 
         let buffer = render.image();

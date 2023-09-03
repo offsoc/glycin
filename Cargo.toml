@@ -1,5 +1,5 @@
 [workspace.package]
-version = "0.1.0-beta.4"
+version = "0.1.0-rc"
 authors = ["Sophie Herold"]
 description = "Sandboxed image rendering"
 license = "MPL-2.0 OR LGPL-2.1-or-later"
@@ -17,13 +17,5 @@ opt-level = 3
 
 [workspace]
 resolver = "2"
-members = [
-    "glycin",
-    "glycin-utils",
-    "loaders/*",
-    "tests",
-]
-default-members = [
-    "glycin",
-    "glycin-utils",
-]
+members = ["glycin", "glycin-utils", "loaders/*", "tests"]
+default-members = ["glycin", "glycin-utils"]
