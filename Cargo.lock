@@ -1059,7 +1059,7 @@ dependencies = [
 
 [[package]]
 name = "glycin"
-version = "0.1.0-rc"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-std",
@@ -1079,7 +1079,7 @@ dependencies = [
 
 [[package]]
 name = "glycin-heif"
-version = "0.1.0-rc"
+version = "0.1.0"
 dependencies = [
  "glycin-utils",
  "libheif-rs",
@@ -1088,7 +1088,7 @@ dependencies = [
 
 [[package]]
 name = "glycin-image-rs"
-version = "0.1.0-rc"
+version = "0.1.0"
 dependencies = [
  "glycin-utils",
  "image",
@@ -1097,7 +1097,7 @@ dependencies = [
 
 [[package]]
 name = "glycin-jxl"
-version = "0.1.0-rc"
+version = "0.1.0"
 dependencies = [
  "glycin-utils",
  "jxl-oxide",
@@ -1106,7 +1106,7 @@ dependencies = [
 
 [[package]]
 name = "glycin-svg"
-version = "0.1.0-rc"
+version = "0.1.0"
 dependencies = [
  "cairo-rs",
  "gio",
@@ -1116,7 +1116,7 @@ dependencies = [
 
 [[package]]
 name = "glycin-utils"
-version = "0.1.0-rc"
+version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-std",
@@ -1481,9 +1481,9 @@ dependencies = [
 
 [[package]]
 name = "librsvg"
-version = "2.57.0-beta.3"
+version = "2.57.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f727ab5dc632c87b164e60a8dda24e671a44d8f6a7f45c744de14434b7fb6fa"
+checksum = "c4b6285fca2e4de40d61e398408a4cd261d475a960da58ae28d94d6352088078"
 dependencies = [
  "cairo-rs",
  "cast",
@@ -2560,7 +2560,7 @@ dependencies = [
 
 [[package]]
 name = "tests"
-version = "0.1.0-rc"
+version = "0.1.0"
 dependencies = [
  "async-std",
  "gdk4",
