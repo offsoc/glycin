@@ -26,8 +26,6 @@ fn worker(decoder: ImageRsDecoder<Reader>, data: Reader, mime_type: String, send
 
     std::thread::park();
 
-    let mut nth_frame = 1;
-
     loop {
         if decoder.is_none() {
             decoder = ImageRsDecoder::new(data.clone(), &mime_type).ok();
@@ -38,20 +36,35 @@ fn worker(decoder: ImageRsDecoder<Reader>, data: Reader, mime_type: String, send
             let _result = webp.set_background_color(image::Rgba::from([0, 0, 0, 0]));
         }
 
-        let frames = std::mem::take(&mut decoder).unwrap().into_frames().unwrap();
+        let mut frames = std::mem::take(&mut decoder).unwrap().into_frames().unwrap();
+        let mut first_frames = Vec::new();
 
-        for frame in frames {
+        // Decode first two frames to check if actually an animation
+        for _ in 0..2 {
+            if let Some(frame) = frames.next() {
+                first_frames.push(frame);
+            }
+        }
+
+        let is_animated = match first_frames.len() {
+            0 => panic!("No frames found"),
+            1 => false,
+            _ => true,
+        };
+
+        for frame in first_frames.into_iter().chain(frames) {
             match frame {
                 Err(err) => {
                     eprintln!("Skipping frame: {err}");
                 }
                 Ok(frame) => {
-                    nth_frame += 1;
-
                     let (delay_num, delay_den) = frame.delay().numer_denom_ms();
 
-                    let delay = if delay_num == 0 || delay_den == 0 {
+                    let delay = if !is_animated {
                         None
+                    } else if delay_num == 0 || delay_den == 0 {
+                        // Other decoders default to this value as well
+                        Some(std::time::Duration::from_millis(100))
                     } else {
                         let micros = f64::round(delay_num as f64 * 1000. / delay_den as f64) as u64;
                         Some(std::time::Duration::from_micros(micros))
@@ -77,17 +90,13 @@ fn worker(decoder: ImageRsDecoder<Reader>, data: Reader, mime_type: String, send
                     send.send(out_frame).unwrap();
 
                     // If not really an animation no need to keep the thread around
-                    if delay.is_none() {
+                    if !is_animated {
                         return;
                     }
                 }
             }
 
             std::thread::park();
-        }
-
-        if nth_frame == 1 {
-            panic!("No frames found");
         }
     }
 }
