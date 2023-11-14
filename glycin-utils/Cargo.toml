@@ -9,6 +9,9 @@ repository.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 
+[patch.crates-io]
+png = { git = "https://github.com/image-rs/image-png.git" }
+
 [dependencies]
 anyhow = { version = "1.0.71", features = ["backtrace"] }
 async-std = "1.12.0"
