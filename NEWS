@@ -1,3 +1,7 @@
+## 0.1.2
+
+- GIF/APNG/WEBP: Assume frame length of 100ms if provided frame length is zero or invalid
+
 ## 0.1.1
 
 - Distribute correct Cargo.lock for glycin-loaders tarballs
