@@ -269,6 +269,10 @@ impl Communication {
     pub async fn new(decoder: impl Decoder + 'static) -> Self {
         let unix_stream = unsafe { UnixStream::from_raw_fd(std::io::stdin().as_raw_fd()) };
 
+        Self::new_with_steam(decoder, unix_stream).await
+    }
+
+    pub async fn new_with_steam(decoder: impl Decoder + 'static, unix_stream: UnixStream) -> Self {
         let instruction_handler = DecodingInstruction {
             decoder: Mutex::new(Box::new(decoder)),
         };
@@ -293,8 +297,8 @@ pub trait Decoder: Send {
     fn decode_frame(&self, frame_request: FrameRequest) -> Result<Frame, DecoderError>;
 }
 
-struct DecodingInstruction {
-    decoder: Mutex<Box<dyn Decoder>>,
+pub struct DecodingInstruction {
+    pub decoder: Mutex<Box<dyn Decoder>>,
 }
 
 #[zbus::dbus_interface(name = "org.gnome.glycin.DecodingInstruction")]

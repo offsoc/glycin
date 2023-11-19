@@ -2566,6 +2566,8 @@ dependencies = [
  "gdk4",
  "gio",
  "glycin",
+ "glycin-utils",
+ "zbus",
 ]
 
 [[package]]
