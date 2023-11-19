@@ -42,7 +42,7 @@ Where the part behind `loader` is a mime-type and the value of `Exec` can be any
 
 ### Existing compatibility versions
 
-Not every new major version of the library has to break compatibility with the loaders. The following compatibility versions currently exist
+Not every new major version of the library has to break compatibility with the loaders. The formal definition is available in [`docs/`](docs/). The following compatibility versions currently exist
 
 | compat-version |
 |----------------|
@@ -86,6 +86,12 @@ The following features are supported by the glycin loaders provided in the [load
 - The `-Dloaders` option allows to only build certain loaders.
 - The `-Dtest_skip_ext` option allows to skip certain image filename extensions during tests. The `-Dtest_skip_ext=heic` might be needed if x265 is not available.
 - Running integration tests requires the glycin loaders to be installed. By default this is done by `meson test` automatically. This behavior can be changed by setting `-Dtest_skip_install=true`.
+
+## Inner Workings
+
+Glycin spawns one sandboxed process per image file via `bwrap` or `flatpak-spawn`. The communication happens via peer-to-peer D-Bus over a UNIX socket. The file data is read from a `GFile` and sent to the sandbox via a separate UNIX socket. The texture data is provided from the sandbox via a memfd that is sealed afterward and given as an mmap to GTK. For animations and SVGs the sandboxed process is kept alive for new frames or tiles as long as needed.
+
+To implement a new loader, please consult the [`glycin-utils` docs](https://docs.rs/glycin-utils/).
 
 ## License
 
