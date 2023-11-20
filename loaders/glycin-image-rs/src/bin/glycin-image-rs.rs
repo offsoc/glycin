@@ -2,6 +2,7 @@
 
 use glycin_utils::*;
 use image::codecs;
+use image::io::Limits;
 use image::AnimationDecoder;
 
 use std::io::Cursor;
@@ -167,7 +168,9 @@ impl ImageRsDecoder<Reader> {
             "image/x-ff" => {
                 Self::Farbfeld(codecs::farbfeld::FarbfeldDecoder::new(data).context_failed()?)
             }
-            "image/gif" => Self::Gif(codecs::gif::GifDecoder::new(data).context_failed()?),
+            "image/gif" => Self::Gif(
+                codecs::gif::GifDecoder::with_limits(data, Limits::no_limits()).context_failed()?,
+            ),
             //"image/vnd.radiance" => Self::Hdr(codecs::hdr::HdrDecoder::new(data).context_failed()?),
             "image/vnd.microsoft.icon" => {
                 Self::Ico(codecs::ico::IcoDecoder::new(data).context_failed()?)
@@ -176,7 +179,9 @@ impl ImageRsDecoder<Reader> {
             "image/x-exr" => {
                 Self::OpenExr(codecs::openexr::OpenExrDecoder::new(data).context_failed()?)
             }
-            "image/png" => Self::Png(codecs::png::PngDecoder::new(data).context_failed()?),
+            "image/png" => Self::Png(
+                codecs::png::PngDecoder::with_limits(data, Limits::no_limits()).context_failed()?,
+            ),
             "image/x-portable-bitmap"
             | "image/x-portable-graymap"
             | "image/x-portable-pixmap"
