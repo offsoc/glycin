@@ -1073,7 +1073,6 @@ dependencies = [
  "memmap2",
  "nix",
  "rgb",
- "safe-transmute",
  "zbus",
 ]
 
@@ -1424,19 +1423,20 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "lcms2"
-version = "5.6.0"
+version = "6.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9d50a4d00d909da0ec023ab34ea09bf3b3b79b5a36b3e0da3a305112edaf150"
+checksum = "745453cbf12c57cce42c1d1db6075d481ca1956fa9bf661f770018656d55e1bd"
 dependencies = [
+ "bytemuck",
  "foreign-types",
  "lcms2-sys",
 ]
 
 [[package]]
 name = "lcms2-sys"
-version = "4.0.3"
+version = "4.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "137dae56197ab9e66729ff73e2942e26f16f9ddcd14a53295c35f53dcd067b58"
+checksum = "99c5fe876968a1685074a0978632afd4629d7ba40f0ac563388c1a296ce12536"
 dependencies = [
  "cc",
  "dunce",

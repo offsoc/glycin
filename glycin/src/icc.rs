@@ -1,55 +1,19 @@
-use glycin_utils::{Frame, MemoryFormat, MemoryFormatBytes};
-use rgb::AsPixels;
-use safe_transmute::error::Error as TsmErr;
+use glycin_utils::{Frame, MemoryFormat};
 
 pub fn apply_transformation(frame: &Frame, mmap: &mut [u8]) -> anyhow::Result<()> {
     if let Some(iccp) = frame.iccp.as_ref() {
         let memory_format = frame.memory_format;
 
-        let res = match memory_format.n_bytes() {
-            MemoryFormatBytes::B1 => transform::<u8>(iccp, memory_format, mmap),
-            MemoryFormatBytes::B2 => {
-                let buf = safe_transmute::transmute_many_pedantic_mut(mmap)
-                    .map_err(TsmErr::without_src)?;
-                transform::<u16>(iccp, memory_format, buf)
-            }
-            MemoryFormatBytes::B3 => {
-                transform::<rgb::RGB<u8>>(iccp, memory_format, mmap.as_pixels_mut())
-            }
-            MemoryFormatBytes::B4 => {
-                transform::<rgb::RGBA<u8>>(iccp, memory_format, mmap.as_pixels_mut())
-            }
-            MemoryFormatBytes::B6 => {
-                let buf = safe_transmute::transmute_many_pedantic_mut(mmap)
-                    .map_err(TsmErr::without_src)?;
-                transform::<rgb::RGB<u16>>(iccp, memory_format, buf.as_pixels_mut())
-            }
-            MemoryFormatBytes::B8 => {
-                let buf = safe_transmute::transmute_many_pedantic_mut(mmap)
-                    .map_err(TsmErr::without_src)?;
-                transform::<rgb::RGBA<u16>>(iccp, memory_format, buf.as_pixels_mut())
-            }
-            MemoryFormatBytes::B12 => {
-                let buf = safe_transmute::transmute_many_pedantic_mut(mmap)
-                    .map_err(TsmErr::without_src)?;
-                transform::<rgb::RGB<u32>>(iccp, memory_format, buf.as_pixels_mut())
-            }
-            MemoryFormatBytes::B16 => {
-                let buf = safe_transmute::transmute_many_pedantic_mut(mmap)
-                    .map_err(TsmErr::without_src)?;
-                transform::<rgb::RGBA<u32>>(iccp, memory_format, buf.as_pixels_mut())
-            }
-        };
-        res.map_err(Into::into)
+        transform(iccp, memory_format, mmap).map_err(Into::into)
     } else {
         Ok(())
     }
 }
 
-fn transform<F: Copy>(
+fn transform(
     icc_profile: &[u8],
     memory_format: MemoryFormat,
-    buf: &mut [F],
+    buf: &mut [u8],
 ) -> Result<(), lcms2::Error> {
     let icc_pixel_format = lcms_pixel_format(memory_format);
     let src_profile = lcms2::Profile::new_icc(icc_profile)?;
