@@ -57,8 +57,10 @@ async fn test_dir(dir: impl AsRef<Path>) {
     let mut list = Vec::new();
     for entry in images {
         let path = entry.unwrap().path();
+        eprintln!("  - {path:?}");
 
         if skip_ext.contains(&path.extension().unwrap_or_default().into()) {
+            eprint!("    (skipped)");
             continue;
         }
 
@@ -66,6 +68,8 @@ async fn test_dir(dir: impl AsRef<Path>) {
 
         if result.is_failed() {
             some_failed = true;
+        } else {
+            eprint!("    (OK)");
         }
 
         list.push((format!("{path:#?}"), result));

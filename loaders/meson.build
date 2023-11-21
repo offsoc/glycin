@@ -101,6 +101,7 @@ test(
     cargo_options,
     '--',
     '--test-threads=1',
+    '--nocapture',
   ],
   env: { 'XDG_DATA_HOME': datadir, 'GLYCIN_TEST_SKIP_EXT': test_skip_ext },
   is_parallel: false,
