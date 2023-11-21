@@ -1424,19 +1424,18 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 
 [[package]]
 name = "lcms2"
-version = "5.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9d50a4d00d909da0ec023ab34ea09bf3b3b79b5a36b3e0da3a305112edaf150"
+version = "6.0.0"
+source = "git+https://github.com/kornelski/rust-lcms2.git?rev=662598e37473c1d34a4740ccf67d55439f05d60b#662598e37473c1d34a4740ccf67d55439f05d60b"
 dependencies = [
+ "bytemuck",
  "foreign-types",
  "lcms2-sys",
 ]
 
 [[package]]
 name = "lcms2-sys"
-version = "4.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "137dae56197ab9e66729ff73e2942e26f16f9ddcd14a53295c35f53dcd067b58"
+version = "4.0.2"
+source = "git+https://github.com/kornelski/rust-lcms2.git?rev=662598e37473c1d34a4740ccf67d55439f05d60b#662598e37473c1d34a4740ccf67d55439f05d60b"
 dependencies = [
  "cc",
  "dunce",

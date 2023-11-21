@@ -46,7 +46,7 @@ pub fn apply_transformation(frame: &Frame, mmap: &mut [u8]) -> anyhow::Result<()
     }
 }
 
-fn transform<F: Copy>(
+fn transform<F: Copy + rgb::Pod>(
     icc_profile: &[u8],
     memory_format: MemoryFormat,
     buf: &mut [F],
