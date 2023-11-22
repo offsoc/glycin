@@ -1425,7 +1425,7 @@ checksum = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
 [[package]]
 name = "lcms2"
 version = "6.0.0"
-source = "git+https://github.com/kornelski/rust-lcms2.git?rev=579182f6acdf840b55b5e8bf66da3daa821d37ff#579182f6acdf840b55b5e8bf66da3daa821d37ff"
+source = "git+https://github.com/sophie-h/rust-lcms2?rev=4b623f4187eb723a82094713562feab88c02a7ec#4b623f4187eb723a82094713562feab88c02a7ec"
 dependencies = [
  "bytemuck",
  "foreign-types",
@@ -1434,8 +1434,8 @@ dependencies = [
 
 [[package]]
 name = "lcms2-sys"
-version = "4.0.2"
-source = "git+https://github.com/kornelski/rust-lcms2.git?rev=579182f6acdf840b55b5e8bf66da3daa821d37ff#579182f6acdf840b55b5e8bf66da3daa821d37ff"
+version = "4.0.3"
+source = "git+https://github.com/sophie-h/rust-lcms2?rev=4b623f4187eb723a82094713562feab88c02a7ec#4b623f4187eb723a82094713562feab88c02a7ec"
 dependencies = [
  "cc",
  "dunce",

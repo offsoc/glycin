@@ -18,8 +18,8 @@ futures = "0.3.28"
 gdk = { package = "gdk4", version = "0.7.1", features = ["v4_12"] }
 gio = "0.18.1"
 glycin-utils = { version = "0.1.0-beta.2", path = "../glycin-utils/" }
-lcms2 = { version = "6.0.0", git = "https://github.com/kornelski/rust-lcms2.git", rev = "579182f6acdf840b55b5e8bf66da3daa821d37ff" }
-lcms2-sys = { git = "https://github.com/kornelski/rust-lcms2.git", rev = "579182f6acdf840b55b5e8bf66da3daa821d37ff" }
+lcms2 = { git = "https://github.com/sophie-h/rust-lcms2", rev = "4b623f4187eb723a82094713562feab88c02a7ec" }
+lcms2-sys = { git = "https://github.com/sophie-h/rust-lcms2", rev = "4b623f4187eb723a82094713562feab88c02a7ec" }
 memfd = "0.6.3"
 memmap = { package = "memmap2", version = "0.7.0" }
 nix = "0.26.2"
