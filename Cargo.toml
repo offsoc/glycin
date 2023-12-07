@@ -17,5 +17,5 @@ opt-level = 3
 
 [workspace]
 resolver = "2"
-members = ["glycin", "glycin-utils", "loaders/*", "tests"]
+members = ["glycin", "glycin-utils", "loaders/*", "tests", "tools"]
 default-members = ["glycin", "glycin-utils"]
