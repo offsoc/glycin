@@ -20,19 +20,28 @@ async fn run() -> Result<(), glycin::Error> {
 
     println!("[info]");
     println!("dimensions = {} x {}", info.width, info.height);
-    println!("format_name = {}", info.format_name);
-    println!("exif = {}", info.exif.is_some());
-    println!("xmp = {}", info.xmp.is_some());
+    println!(
+        "format_name = {}",
+        info.details
+            .format_name
+            .as_ref()
+            .cloned()
+            .unwrap_or("-".into())
+    );
+    println!("exif = {}", info.details.exif.is_some());
+    println!("xmp = {}", info.details.xmp.is_some());
     println!(
         "dimensions_text = {}",
-        info.dimensions_text
+        info.details
+            .dimensions_text
             .as_ref()
             .cloned()
             .unwrap_or(String::from("-"))
     );
     println!(
         "dimensions_inch = {}",
-        info.dimensions_inch
+        info.details
+            .dimensions_inch
             .as_ref()
             .map(|(x, y)| format!("{:.3}” x {:.3}”", x, y))
             .unwrap_or("-".into())

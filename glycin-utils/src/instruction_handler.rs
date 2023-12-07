@@ -23,7 +23,7 @@ impl Communication {
     pub async fn new(decoder: impl Decoder + 'static) -> Self {
         let unix_stream = unsafe { UnixStream::from_raw_fd(std::io::stdin().as_raw_fd()) };
 
-        let instruction_handler = DecodingInstruction {
+        let instruction_handler = Decoding {
             decoder: Mutex::new(Box::new(decoder)),
         };
         let dbus_connection = zbus::ConnectionBuilder::unix_stream(unix_stream)
@@ -51,21 +51,21 @@ pub trait Decoder: Send {
     fn decode_frame(&self, frame_request: FrameRequest) -> Result<Frame, DecoderError>;
 }
 
-struct DecodingInstruction {
-    decoder: Mutex<Box<dyn Decoder>>,
+pub struct Decoding {
+    pub decoder: Mutex<Box<dyn Decoder>>,
 }
 
-#[zbus::dbus_interface(name = "org.gnome.glycin.DecodingInstruction")]
-impl DecodingInstruction {
-    async fn init(&self, message: InitializationRequest) -> Result<ImageInfo, RemoteError> {
-        let fd = message.fd.into_raw_fd();
+#[zbus::dbus_interface(name = "org.gnome.glycin.Decoding")]
+impl Decoding {
+    async fn init(&self, init_request: InitRequest) -> Result<ImageInfo, RemoteError> {
+        let fd = init_request.fd.into_raw_fd();
         let stream = unsafe { UnixStream::from_raw_fd(fd) };
 
         let image_info = self
             .decoder
             .lock()
             .or(Err(RemoteError::InternalDecoderError))?
-            .init(stream, message.mime_type, message.details)?;
+            .init(stream, init_request.mime_type, init_request.details)?;
 
         Ok(image_info)
     }

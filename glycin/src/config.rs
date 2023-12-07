@@ -10,7 +10,7 @@ use crate::dbus::Error;
 pub type MimeType = String;
 
 const CONFIG_FILE_EXT: &str = "conf";
-const API_VERSION: u8 = 1;
+pub const COMPAT_VERSION: u8 = 1;
 
 static CONFIG: OnceLock<Config> = OnceLock::new();
 
@@ -49,7 +49,7 @@ impl Config {
 
         for mut data_dir in data_dirs {
             data_dir.push("glycin-loaders");
-            data_dir.push(format!("{API_VERSION}+"));
+            data_dir.push(format!("{COMPAT_VERSION}+"));
             data_dir.push("conf.d");
 
             if let Ok(mut config_files) = fs::read_dir(data_dir).await {

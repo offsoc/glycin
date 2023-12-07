@@ -5,7 +5,7 @@ use zbus::zvariant::{Optional, Type};
 use std::time::Duration;
 
 #[derive(Deserialize, Serialize, Type, Debug)]
-pub struct InitializationRequest {
+pub struct InitRequest {
     /// Source from which the loader reads the image data
     pub fd: zvariant::OwnedFd,
     pub mime_type: String,
@@ -19,8 +19,11 @@ pub struct InitializationDetails {
     pub base_dir: Optional<std::path::PathBuf>,
 }
 
-#[derive(Deserialize, Serialize, Type, Debug, Clone, Default)]
+#[derive(DeserializeDict, SerializeDict, Type, Debug, Clone, Default)]
+#[zvariant(signature = "dict")]
+#[non_exhaustive]
 pub struct FrameRequest {
+    /// Scale image to these dimensions
     pub scale: Optional<(u32, u32)>,
     /// Instruction to only decode part of the image
     pub clip: Optional<(u32, u32, u32, u32)>,

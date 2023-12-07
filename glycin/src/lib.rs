@@ -23,4 +23,5 @@ mod config;
 mod icc;
 
 pub use api::*;
+pub use config::COMPAT_VERSION;
 pub use glycin_utils::{ImageInfo, RemoteError};

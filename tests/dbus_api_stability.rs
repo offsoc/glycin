@@ -1,6 +1,6 @@
 use std::{os::unix::net::UnixStream, sync::Mutex};
 
-const INTERFACE_NAME: &str = &"org.gnome.glycin.DecodingInstruction";
+const INTERFACE_NAME: &str = "org.gnome.glycin.Decoding";
 
 #[test]
 #[ignore]
@@ -17,7 +17,9 @@ fn dbus_api_stability() {
         .output()
         .unwrap();
 
-    let current_api = std::fs::read_to_string(format!("../docs/0+/{INTERFACE_NAME}.xml")).unwrap();
+    let compat_version = glycin::COMPAT_VERSION;
+    let current_api =
+        std::fs::read_to_string(format!("../docs/{compat_version}+/{INTERFACE_NAME}.xml")).unwrap();
 
     let s = r#"<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN"
   "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
@@ -62,7 +64,8 @@ async fn start_dbus() {
         fn init(
             &self,
             _stream: UnixStream,
-            _details: glycin_utils::DecodingDetails,
+            _mime_type: String,
+            _details: glycin_utils::InitializationDetails,
         ) -> Result<glycin_utils::ImageInfo, glycin_utils::DecoderError> {
             unimplemented!()
         }
@@ -76,7 +79,7 @@ async fn start_dbus() {
 
     let decoder = MockDecoder {};
 
-    let instruction_handler = glycin_utils::DecodingInstruction {
+    let instruction_handler = glycin_utils::Decoding {
         decoder: Mutex::new(Box::new(decoder)),
     };
 

@@ -20,7 +20,7 @@ use std::sync::Arc;
 #[derive(Clone, Debug)]
 pub struct DecoderProcess<'a> {
     _dbus_connection: zbus::Connection,
-    decoding_instruction: DecodingInstructionProxy<'a>,
+    decoding_instruction: DecodingProxy<'a>,
     mime_type: String,
 }
 
@@ -117,7 +117,7 @@ impl<'a> DecoderProcess<'a> {
 
         let dbus_connection = dbus_result.await?;
 
-        let decoding_instruction = DecodingInstructionProxy::new(&dbus_connection)
+        let decoding_instruction = DecodingProxy::new(&dbus_connection)
             .await
             .expect("Failed to create decoding instruction proxy");
 
@@ -145,7 +145,7 @@ impl<'a> DecoderProcess<'a> {
 
         let image_info = self
             .decoding_instruction
-            .init(InitializationRequest {
+            .init(InitRequest {
                 fd,
                 mime_type,
                 details,
@@ -257,11 +257,11 @@ use std::io::Write;
 const BUF_SIZE: usize = u16::MAX as usize;
 
 #[zbus::dbus_proxy(
-    interface = "org.gnome.glycin.DecodingInstruction",
+    interface = "org.gnome.glycin.Decoding",
     default_path = "/org/gnome/glycin"
 )]
-trait DecodingInstruction {
-    async fn init(&self, message: InitializationRequest) -> Result<ImageInfo, RemoteError>;
+trait Decoding {
+    async fn init(&self, init_request: InitRequest) -> Result<ImageInfo, RemoteError>;
     async fn decode_frame(&self, frame_request: FrameRequest) -> Result<Frame, RemoteError>;
 }
 
