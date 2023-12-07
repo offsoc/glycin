@@ -1059,7 +1059,7 @@ dependencies = [
 
 [[package]]
 name = "glycin"
-version = "0.1.0"
+version = "1.0.0-alpha"
 dependencies = [
  "anyhow",
  "async-std",
@@ -1078,7 +1078,7 @@ dependencies = [
 
 [[package]]
 name = "glycin-heif"
-version = "0.1.0"
+version = "1.0.0-alpha"
 dependencies = [
  "glycin-utils",
  "libheif-rs",
@@ -1087,7 +1087,7 @@ dependencies = [
 
 [[package]]
 name = "glycin-image-rs"
-version = "0.1.0"
+version = "1.0.0-alpha"
 dependencies = [
  "glycin-utils",
  "image",
@@ -1096,7 +1096,7 @@ dependencies = [
 
 [[package]]
 name = "glycin-jxl"
-version = "0.1.0"
+version = "1.0.0-alpha"
 dependencies = [
  "glycin-utils",
  "jxl-oxide",
@@ -1105,7 +1105,7 @@ dependencies = [
 
 [[package]]
 name = "glycin-svg"
-version = "0.1.0"
+version = "1.0.0-alpha"
 dependencies = [
  "cairo-rs",
  "gio",
@@ -1115,7 +1115,7 @@ dependencies = [
 
 [[package]]
 name = "glycin-utils"
-version = "0.1.0"
+version = "1.0.0-alpha"
 dependencies = [
  "anyhow",
  "async-std",
@@ -2560,7 +2560,7 @@ dependencies = [
 
 [[package]]
 name = "tests"
-version = "0.1.0"
+version = "1.0.0-alpha"
 dependencies = [
  "async-std",
  "gdk4",

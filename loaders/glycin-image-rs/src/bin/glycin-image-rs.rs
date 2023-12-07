@@ -105,21 +105,22 @@ impl Decoder for ImgDecoder {
     fn init(
         &self,
         mut stream: UnixStream,
-        details: DecodingDetails,
+        mime_type: String,
+        _details: InitializationDetails,
     ) -> Result<ImageInfo, DecoderError> {
         let mut buf = Vec::new();
         stream.read_to_end(&mut buf).context_internal()?;
         let data = Cursor::new(buf);
 
-        let mut decoder = ImageRsDecoder::new(data.clone(), &details.mime_type)?;
+        let mut decoder = ImageRsDecoder::new(data.clone(), &mime_type)?;
         let mut image_info = decoder.info();
 
         let exif = exif::Reader::new().read_from_container(&mut data.clone());
-        image_info.exif = exif.ok().map(|x| x.buf().to_vec()).into();
+        image_info.details.exif = exif.ok().map(|x| x.buf().to_vec()).into();
 
         if decoder.is_animated() {
             let (send, recv) = channel();
-            let thead = std::thread::spawn(move || worker(decoder, data, details.mime_type, send));
+            let thead = std::thread::spawn(move || worker(decoder, data, mime_type, send));
             *self.thread.lock().unwrap() = Some((thead, recv));
         } else {
             *self.decoder.lock().unwrap() = Some(decoder);

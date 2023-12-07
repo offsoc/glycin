@@ -163,8 +163,8 @@ impl<'a> Image<'a> {
         self.mime_type.clone()
     }
 
-    pub fn format_name(&self) -> String {
-        self.info().format_name.clone()
+    pub fn format_name(&self) -> Option<String> {
+        self.info().details.format_name.as_ref().cloned()
     }
 
     pub fn request(&self) -> &ImageRequest {

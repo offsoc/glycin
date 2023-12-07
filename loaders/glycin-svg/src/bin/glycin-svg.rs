@@ -48,8 +48,8 @@ pub fn thread(
 
     let mut image_info = ImageInfo::new(original_width, original_height, String::from("SVG"));
 
-    image_info.dimensions_text = dimensions_text(renderer.intrinsic_dimensions()).into();
-    image_info.dimensions_inch = dimensions_inch(renderer.intrinsic_dimensions()).into();
+    image_info.details.dimensions_text = dimensions_text(renderer.intrinsic_dimensions()).into();
+    image_info.details.dimensions_inch = dimensions_inch(renderer.intrinsic_dimensions()).into();
 
     info_send.send(Ok(image_info)).unwrap();
 
@@ -124,7 +124,8 @@ impl Decoder for ImgDecoder {
     fn init(
         &self,
         stream: UnixStream,
-        details: DecodingDetails,
+        _mime_type: String,
+        details: InitializationDetails,
     ) -> Result<ImageInfo, DecoderError> {
         let (info_send, info_recv) = channel();
         let (frame_send, frame_recv) = channel();

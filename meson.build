@@ -17,7 +17,7 @@ endif
 
 i18n = import ('i18n')
 
-compat_version = '0+'
+compat_version = '1+'
 
 libexecdir = get_option('prefix') / get_option('libexecdir') / meson.project_name() / compat_version
 datadir = get_option('prefix') / get_option('datadir')

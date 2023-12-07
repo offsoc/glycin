@@ -99,8 +99,8 @@ async fn compare_images(reference_path: impl AsRef<Path>, path: impl AsRef<Path>
         debug_file(&path).await;
     }
 
-    let reference_exif = get_info(&reference_path).await.exif;
-    let exif = get_info(&path).await.exif;
+    let reference_exif = get_info(&reference_path).await.details.exif;
+    let exif = get_info(&path).await.details.exif;
 
     let exif_eq = if reference_exif.is_none() && path.as_ref().extension().unwrap() == "tiff" {
         true

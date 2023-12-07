@@ -19,7 +19,8 @@ impl Decoder for ImgDecoder {
     fn init(
         &self,
         mut stream: UnixStream,
-        details: DecodingDetails,
+        mime_type: String,
+        _details: InitializationDetails,
     ) -> Result<ImageInfo, DecoderError> {
         let mut data = Vec::new();
         let total_size = stream.read_to_end(&mut data).context_internal()?;
@@ -31,13 +32,13 @@ impl Decoder for ImgDecoder {
 
         let mut image_info =
             ImageInfo::new(handle.width(), handle.height(), "HEIF Container".into());
-        image_info.exif = exif(&handle).into();
+        image_info.details.exif = exif(&handle).into();
 
         // TODO: Later use libheif 1.16 to get info if there is a transformation
-        image_info.transformations_applied = true;
+        image_info.details.transformations_applied = true;
 
         *self.decoder.lock().unwrap() = Some(context);
-        let _ = self.mime_type.set(details.mime_type);
+        let _ = self.mime_type.set(mime_type);
         Ok(image_info)
     }
 
@@ -144,7 +145,7 @@ fn decode(context: HeifContext, mime_type: &str) -> Result<Frame, DecoderError> 
 
     let mut frame = Frame::new(plane.width, plane.height, memory_format, texture);
     frame.stride = plane.stride.try_u32()?;
-    frame.iccp = icc_profile.into();
+    frame.details.iccp = icc_profile.into();
 
     Ok(frame)
 }

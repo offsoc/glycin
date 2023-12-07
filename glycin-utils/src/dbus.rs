@@ -1,19 +1,21 @@
 use serde::{Deserialize, Serialize};
-use zbus::zvariant;
+use zbus::zvariant::{self, DeserializeDict, SerializeDict};
 use zbus::zvariant::{Optional, Type};
 
 use std::time::Duration;
 
 #[derive(Deserialize, Serialize, Type, Debug)]
-pub struct DecodingRequest {
+pub struct InitializationRequest {
     /// Source from which the loader reads the image data
     pub fd: zvariant::OwnedFd,
-    pub details: DecodingDetails,
+    pub mime_type: String,
+    pub details: InitializationDetails,
 }
 
-#[derive(Deserialize, Serialize, Type, Debug)]
-pub struct DecodingDetails {
-    pub mime_type: String,
+#[derive(DeserializeDict, SerializeDict, Type, Debug, Default)]
+#[zvariant(signature = "dict")]
+#[non_exhaustive]
+pub struct InitializationDetails {
     pub base_dir: Optional<std::path::PathBuf>,
 }
 
@@ -29,39 +31,61 @@ pub struct FrameRequest {
 pub struct ImageInfo {
     pub width: u32,
     pub height: u32,
-    pub format_name: String,
-    pub exif: Optional<Vec<u8>>,
-    pub xmp: Optional<Vec<u8>>,
-    pub transformations_applied: bool,
-    pub dimensions_text: Optional<String>,
-    pub dimensions_inch: Optional<(f64, f64)>,
+    pub details: ImageInfoDetails,
 }
 
 impl ImageInfo {
     pub fn new(width: u32, height: u32, format_name: String) -> Self {
+        let details = ImageInfoDetails {
+            format_name: Some(format_name).into(),
+            ..Default::default()
+        };
+
         Self {
             width,
             height,
-            format_name,
-            exif: None.into(),
-            xmp: None.into(),
-            transformations_applied: false,
-            dimensions_text: None.into(),
-            dimensions_inch: None.into(),
+            details,
         }
     }
+}
+
+#[derive(DeserializeDict, SerializeDict, Type, Debug, Default, Clone)]
+#[zvariant(signature = "dict")]
+#[non_exhaustive]
+pub struct ImageInfoDetails {
+    pub format_name: Optional<String>,
+    pub exif: Optional<Vec<u8>>,
+    pub xmp: Optional<Vec<u8>>,
+    pub transformations_applied: bool,
+    /// Textual description of the image dimensions
+    pub dimensions_text: Optional<String>,
+    /// Image dimensions in inch
+    pub dimensions_inch: Optional<(f64, f64)>,
 }
 
 #[derive(Deserialize, Serialize, Type, Debug)]
 pub struct Frame {
     pub width: u32,
     pub height: u32,
+    /// Line stride
     pub stride: u32,
     pub memory_format: MemoryFormat,
     pub texture: Texture,
-    pub iccp: Optional<Vec<u8>>,
-    pub cicp: Optional<Vec<u8>>,
+    /// Duration to show frame for animations.
+    ///
+    /// If the value is not set, the image is not animated.
     pub delay: Optional<Duration>,
+    pub details: FrameDetails,
+}
+
+#[derive(DeserializeDict, SerializeDict, Type, Debug, Default)]
+#[zvariant(signature = "dict")]
+#[non_exhaustive]
+pub struct FrameDetails {
+    /// ICC color profile
+    pub iccp: Optional<Vec<u8>>,
+    /// Coding-independent code points (HDR information)
+    pub cicp: Optional<Vec<u8>>,
 }
 
 impl Frame {
@@ -74,9 +98,8 @@ impl Frame {
             stride,
             memory_format,
             texture,
-            iccp: None.into(),
-            cicp: None.into(),
             delay: None.into(),
+            details: Default::default(),
         }
     }
 }

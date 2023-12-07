@@ -10,7 +10,7 @@ use crate::dbus::Error;
 pub type MimeType = String;
 
 const CONFIG_FILE_EXT: &str = "conf";
-const API_VERSION: u8 = 0;
+const API_VERSION: u8 = 1;
 
 static CONFIG: OnceLock<Config> = OnceLock::new();
 

@@ -26,7 +26,7 @@ impl Frame {
         let texture = memory.into_texture();
 
         let mut frame = Self::new(width, height, memory_format, texture);
-        frame.iccp = iccp;
+        frame.details.iccp = iccp;
 
         Ok(frame)
     }

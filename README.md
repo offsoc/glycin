@@ -47,6 +47,7 @@ Not every new major version of the library has to break compatibility with the l
 | compat-version |
 |----------------|
 | 0+ |
+| 1+ |
 
 ## Supported image formats
 

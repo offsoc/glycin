@@ -140,14 +140,16 @@ impl<'a> DecoderProcess<'a> {
         let fd = unsafe { zvariant::OwnedFd::from_raw_fd(remote_reader.as_raw_fd()) };
         let mime_type = self.mime_type.clone();
 
-        let details = DecodingDetails {
-            mime_type,
-            base_dir: base_dir.into(),
-        };
+        let mut details = InitializationDetails::default();
+        details.base_dir = base_dir.into();
 
         let image_info = self
             .decoding_instruction
-            .init(DecodingRequest { fd, details })
+            .init(InitializationRequest {
+                fd,
+                mime_type,
+                details,
+            })
             .shared();
 
         let reader_error = gfile_worker.error();
@@ -259,7 +261,7 @@ const BUF_SIZE: usize = u16::MAX as usize;
     default_path = "/org/gnome/glycin"
 )]
 trait DecodingInstruction {
-    async fn init(&self, message: DecodingRequest) -> Result<ImageInfo, RemoteError>;
+    async fn init(&self, message: InitializationRequest) -> Result<ImageInfo, RemoteError>;
     async fn decode_frame(&self, frame_request: FrameRequest) -> Result<Frame, RemoteError>;
 }
 

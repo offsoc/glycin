@@ -21,7 +21,8 @@ impl Decoder for ImgDecoder {
     fn init(
         &self,
         stream: UnixStream,
-        _details: DecodingDetails,
+        _mime_type: String,
+        _details: InitializationDetails,
     ) -> Result<ImageInfo, DecoderError> {
         let image = JxlImage::from_reader(stream).unwrap();
 
@@ -72,7 +73,7 @@ impl Decoder for ImgDecoder {
             memory_format,
             texture,
         );
-        frame.iccp = Some(renderer.rendered_icc()).into();
+        frame.details.iccp = Some(renderer.rendered_icc()).into();
 
         Ok(frame)
     }
