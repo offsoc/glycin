@@ -103,7 +103,7 @@ impl<'a> DecoderProcess<'a> {
             _result = dbus_result.clone().fuse() => Ok(()),
             _result = cancellable.future().fuse() => {
                 let _result = subprocess.kill();
-                Err(glib::Error::from(gio::Cancelled)).map_err(Into::into)
+                Err(glib::Error::from(gio::Cancelled).into())
             },
             return_status = subprocess.status().fuse() => match return_status {
                 Ok(status) => Err(Error::PrematureExit(status)),
