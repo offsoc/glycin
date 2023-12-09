@@ -57,6 +57,30 @@ async fn run() -> Result<(), glycin::Error> {
                 .map(|x| format!("{:#?}", x))
                 .unwrap_or("-".into())
         );
+        println!(
+            "bit_depth = {}",
+            frame
+                .details
+                .bit_depth
+                .map(|x| format!("{} bit", x))
+                .unwrap_or("-".into())
+        );
+        println!(
+            "alpha_channel = {}",
+            frame
+                .details
+                .alpha_channel
+                .map(|x| x.to_string())
+                .unwrap_or("-".into())
+        );
+        println!(
+            "grayscale = {}",
+            frame
+                .details
+                .grayscale
+                .map(|x| x.to_string())
+                .unwrap_or("-".into())
+        );
     }
 
     Ok(())

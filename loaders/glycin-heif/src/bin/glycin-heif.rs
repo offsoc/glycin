@@ -30,9 +30,15 @@ impl Decoder for ImgDecoder {
 
         let handle = context.primary_image_handle().context_failed()?;
 
-        let mut image_info =
-            ImageInfo::new(handle.width(), handle.height(), "HEIF Container".into());
+        let format_name = match mime_type.as_str() {
+            "image/heif" => "HEIC",
+            "image/avif" => "AVIF",
+            _ => "HEIF (Unknown)",
+        };
+
+        let mut image_info = ImageInfo::new(handle.width(), handle.height());
         image_info.details.exif = exif(&handle).into();
+        image_info.details.format_name = Some(format_name.to_string()).into();
 
         // TODO: Later use libheif 1.16 to get info if there is a transformation
         image_info.details.transformations_applied = true;
@@ -146,6 +152,8 @@ fn decode(context: HeifContext, mime_type: &str) -> Result<Frame, DecoderError> 
     let mut frame = Frame::new(plane.width, plane.height, memory_format, texture);
     frame.stride = plane.stride.try_u32()?;
     frame.details.iccp = icc_profile.into();
+    frame.details.bit_depth = Some(plane.bits_per_pixel).into();
+    frame.details.alpha_channel = Some(handle.has_alpha_channel()).into();
 
     Ok(frame)
 }

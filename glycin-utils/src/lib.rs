@@ -5,7 +5,6 @@
 pub mod dbus;
 pub mod error;
 #[cfg(feature = "image-rs")]
-#[doc(hidden)]
 pub mod image_rs;
 pub mod instruction_handler;
 pub mod save_conversion;

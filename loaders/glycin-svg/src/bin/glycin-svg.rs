@@ -46,8 +46,9 @@ pub fn thread(
 
     let (original_width, original_height) = svg_dimensions(&renderer);
 
-    let mut image_info = ImageInfo::new(original_width, original_height, String::from("SVG"));
+    let mut image_info = ImageInfo::new(original_width, original_height);
 
+    image_info.details.format_name = Some(String::from("SVG")).into();
     image_info.details.dimensions_text = dimensions_text(renderer.intrinsic_dimensions()).into();
     image_info.details.dimensions_inch = dimensions_inch(renderer.intrinsic_dimensions()).into();
 
@@ -157,7 +158,7 @@ impl Decoder for ImgDecoder {
         let height = image_info.height;
 
         let total_size = frame_request.scale.unwrap_or((width, height));
-        let area = if let Some(clip) = *frame_request.clip {
+        let area = if let Some(clip) = frame_request.clip {
             cairo::Rectangle::new(clip.0.into(), clip.1.into(), clip.2.into(), clip.3.into())
         } else {
             cairo::Rectangle::new(0., 0., total_size.0.into(), total_size.1.into())

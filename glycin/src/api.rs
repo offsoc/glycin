@@ -6,6 +6,7 @@ use std::sync::OnceLock;
 
 pub use crate::config::MimeType;
 pub use crate::dbus::Error;
+pub use glycin_utils::FrameDetails;
 
 static IS_FLATPAKED: OnceLock<bool> = OnceLock::new();
 
@@ -181,6 +182,7 @@ impl Drop for ImageRequest {
 pub struct Frame {
     pub texture: gdk::Texture,
     pub delay: Option<std::time::Duration>,
+    pub details: FrameDetails,
 }
 
 #[derive(Default, Debug)]

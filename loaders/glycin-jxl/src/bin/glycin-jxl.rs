@@ -28,11 +28,8 @@ impl Decoder for ImgDecoder {
 
         let header = image.image_header();
 
-        let image_info = ImageInfo::new(
-            header.size.width,
-            header.size.height,
-            String::from("JPEG XL"),
-        );
+        let mut image_info = ImageInfo::new(header.size.width, header.size.height);
+        image_info.details.format_name = Some(String::from("JPEG XL")).into();
 
         *self.decoder.lock().unwrap() = Some(image);
 

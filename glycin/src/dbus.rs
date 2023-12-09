@@ -249,6 +249,7 @@ impl<'a> DecoderProcess<'a> {
         Ok(api::Frame {
             texture: texture.upcast(),
             delay: frame.delay.into(),
+            details: frame.details,
         })
     }
 }

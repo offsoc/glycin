@@ -16,7 +16,7 @@ pub struct InitRequest {
 #[zvariant(signature = "dict")]
 #[non_exhaustive]
 pub struct InitializationDetails {
-    pub base_dir: Optional<std::path::PathBuf>,
+    pub base_dir: Option<std::path::PathBuf>,
 }
 
 #[derive(DeserializeDict, SerializeDict, Type, Debug, Clone, Default)]
@@ -24,9 +24,9 @@ pub struct InitializationDetails {
 #[non_exhaustive]
 pub struct FrameRequest {
     /// Scale image to these dimensions
-    pub scale: Optional<(u32, u32)>,
+    pub scale: Option<(u32, u32)>,
     /// Instruction to only decode part of the image
-    pub clip: Optional<(u32, u32, u32, u32)>,
+    pub clip: Option<(u32, u32, u32, u32)>,
 }
 
 /// Various image metadata
@@ -38,16 +38,11 @@ pub struct ImageInfo {
 }
 
 impl ImageInfo {
-    pub fn new(width: u32, height: u32, format_name: String) -> Self {
-        let details = ImageInfoDetails {
-            format_name: Some(format_name).into(),
-            ..Default::default()
-        };
-
+    pub fn new(width: u32, height: u32) -> Self {
         Self {
             width,
             height,
-            details,
+            details: Default::default(),
         }
     }
 }
@@ -56,14 +51,14 @@ impl ImageInfo {
 #[zvariant(signature = "dict")]
 #[non_exhaustive]
 pub struct ImageInfoDetails {
-    pub format_name: Optional<String>,
-    pub exif: Optional<Vec<u8>>,
-    pub xmp: Optional<Vec<u8>>,
+    pub format_name: Option<String>,
+    pub exif: Option<Vec<u8>>,
+    pub xmp: Option<Vec<u8>>,
     pub transformations_applied: bool,
     /// Textual description of the image dimensions
-    pub dimensions_text: Optional<String>,
+    pub dimensions_text: Option<String>,
     /// Image dimensions in inch
-    pub dimensions_inch: Optional<(f64, f64)>,
+    pub dimensions_inch: Option<(f64, f64)>,
 }
 
 #[derive(Deserialize, Serialize, Type, Debug)]
@@ -81,14 +76,26 @@ pub struct Frame {
     pub details: FrameDetails,
 }
 
-#[derive(DeserializeDict, SerializeDict, Type, Debug, Default)]
+#[derive(DeserializeDict, SerializeDict, Type, Debug, Default, Clone)]
 #[zvariant(signature = "dict")]
 #[non_exhaustive]
 pub struct FrameDetails {
     /// ICC color profile
-    pub iccp: Optional<Vec<u8>>,
+    pub iccp: Option<Vec<u8>>,
     /// Coding-independent code points (HDR information)
-    pub cicp: Optional<Vec<u8>>,
+    pub cicp: Option<Vec<u8>>,
+    /// Bit depth per channel
+    ///
+    /// Only set if it can differ for the format
+    pub bit_depth: Option<u8>,
+    /// Image has alpha channel
+    ///
+    /// Only set if it can differ for the format
+    pub alpha_channel: Option<bool>,
+    /// Image uses grayscale mode
+    ///
+    /// Only set if it can differ for the format
+    pub grayscale: Option<bool>,
 }
 
 impl Frame {
