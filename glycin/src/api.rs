@@ -92,6 +92,7 @@ impl ImageRequest {
             &mime_type,
             config,
             sandbox_mechanism,
+            &self.file,
             self.cancellable.as_ref(),
         )
         .await?;

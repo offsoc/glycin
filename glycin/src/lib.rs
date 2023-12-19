@@ -25,6 +25,7 @@ mod api;
 mod config;
 mod dbus;
 mod icc;
+mod sandbox;
 
 pub use api::*;
 pub use config::COMPAT_VERSION;

@@ -1,6 +1,6 @@
 //! Internal DBus API
 
-use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
+use std::os::fd::{AsRawFd, FromRawFd};
 use std::os::unix::net::UnixStream;
 use std::process::ExitStatus;
 use std::sync::Arc;
@@ -15,6 +15,7 @@ use zbus::zvariant;
 
 use crate::api::{self, SandboxMechanism};
 use crate::config;
+use crate::sandbox::Sandbox;
 
 #[derive(Clone, Debug)]
 pub struct DecoderProcess<'a> {
@@ -28,70 +29,33 @@ impl<'a> DecoderProcess<'a> {
         mime_type: &config::MimeType,
         config: &config::Config,
         sandbox_mechanism: SandboxMechanism,
+        file: &gio::File,
         cancellable: &gio::Cancellable,
     ) -> Result<DecoderProcess<'a>, Error> {
-        let decoder_bin = config.get(mime_type)?.exec.clone();
+        let loader_config = config.get(mime_type)?;
 
-        let (unix_stream, fd_decoder) = std::os::unix::net::UnixStream::pair()?;
+        // UnixStream which facilitates the D-Bus connection. The stream is passed as
+        // stdin to loader binaries.
+        let (unix_stream, loader_stdin) = std::os::unix::net::UnixStream::pair()?;
         unix_stream
             .set_nonblocking(true)
             .expect("Couldn't set nonblocking");
-        fd_decoder
+        loader_stdin
             .set_nonblocking(true)
             .expect("Couldn't set nonblocking");
 
+        let decoder_bin = loader_config.exec.clone();
+        let mut sandbox = Sandbox::new(sandbox_mechanism, decoder_bin, loader_stdin);
+        // Mount dir that contains the file as read only for formats like SVG
+        if loader_config.expose_base_dir {
+            if let Some(base_dir) = file.parent().and_then(|x| x.path()) {
+                sandbox.add_ro_bind(base_dir);
+            }
+        }
+        let mut subprocess = sandbox.spawn().await?;
+
         #[cfg(feature = "tokio")]
         let unix_stream = tokio::net::UnixStream::from_std(unix_stream)?;
-
-        let (bin, args, final_arg) = match sandbox_mechanism {
-            SandboxMechanism::Bwrap => (
-                "bwrap".into(),
-                vec![
-                    "--unshare-all",
-                    "--die-with-parent",
-                    // change working directory to something that exists
-                    "--chdir",
-                    "/",
-                    "--ro-bind",
-                    "/",
-                    "/",
-                    "--dev",
-                    "/dev",
-                ],
-                Some(decoder_bin),
-            ),
-            SandboxMechanism::FlatpakSpawn => {
-                (
-                    "flatpak-spawn".into(),
-                    vec![
-                        "--sandbox",
-                        // die with parent
-                        "--watch-bus",
-                        // change working directory to something that exists
-                        "--directory=/",
-                    ],
-                    Some(decoder_bin),
-                )
-            }
-            SandboxMechanism::NotSandboxed => {
-                eprintln!("WARNING: Glycin running without sandbox.");
-                (decoder_bin, vec![], None)
-            }
-        };
-
-        let mut command = async_process::Command::new(bin);
-
-        command.stdin(OwnedFd::from(fd_decoder));
-
-        command.args(args);
-        if let Some(arg) = final_arg {
-            command.arg(arg);
-        }
-
-        let cmd_debug = format!("{:?}", command);
-        let mut subprocess = command
-            .spawn()
-            .map_err(|err| Error::SpawnError(cmd_debug, Arc::new(err)))?;
 
         let guid = zbus::Guid::generate();
         let dbus_result = zbus::ConnectionBuilder::unix_stream(unix_stream)

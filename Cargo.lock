@@ -1215,6 +1215,7 @@ dependencies = [
  "image",
  "memmap2",
  "nix 0.27.1",
+ "rustix 0.37.27",
  "serde",
  "zbus",
 ]

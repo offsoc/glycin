@@ -1,6 +1,7 @@
 variables:
   # Clone test-images
   GIT_SUBMODULE_STRATEGY: recursive
+  RUST_BACKTRACE: "full"
 
 .install_dependencies:
   before_script:
