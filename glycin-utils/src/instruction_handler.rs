@@ -55,7 +55,7 @@ pub struct Decoding {
     pub decoder: Mutex<Box<dyn Decoder>>,
 }
 
-#[zbus::dbus_interface(name = "org.gnome.glycin.Decoding")]
+#[zbus::dbus_interface(name = "org.gnome.glycin.Loader")]
 impl Decoding {
     async fn init(&self, init_request: InitRequest) -> Result<ImageInfo, RemoteError> {
         let fd = init_request.fd.into_raw_fd();
@@ -70,7 +70,7 @@ impl Decoding {
         Ok(image_info)
     }
 
-    async fn decode_frame(&self, frame_request: FrameRequest) -> Result<Frame, RemoteError> {
+    async fn frame(&self, frame_request: FrameRequest) -> Result<Frame, RemoteError> {
         self.decoder
             .lock()
             .or(Err(RemoteError::InternalDecoderError))?

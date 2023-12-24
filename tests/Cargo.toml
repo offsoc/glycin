@@ -9,7 +9,7 @@ rust-version.workspace = true
 
 [dev-dependencies]
 glycin = { path = "../glycin/" }
-glycin-utils = { path = "../glycin-utils/" }
+glycin-utils = { path = "../glycin-utils/", features = ["loader-utils"] }
 gio = "0.18.1"
 async-std = "1.12.0"
 gdk = { package = "gdk4", version = "0.7.1" }

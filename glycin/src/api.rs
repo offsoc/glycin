@@ -197,12 +197,12 @@ impl FrameRequest {
     }
 
     pub fn scale(mut self, width: u32, height: u32) -> Self {
-        self.request.scale = Some((width, height)).into();
+        self.request.scale = Some((width, height));
         self
     }
 
     pub fn clip(mut self, x: u32, y: u32, width: u32, height: u32) -> Self {
-        self.request.clip = Some((x, y, width, height)).into();
+        self.request.clip = Some((x, y, width, height));
         self
     }
 }

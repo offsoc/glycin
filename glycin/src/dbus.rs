@@ -21,7 +21,7 @@ use std::sync::Arc;
 #[derive(Clone, Debug)]
 pub struct DecoderProcess<'a> {
     _dbus_connection: zbus::Connection,
-    decoding_instruction: DecodingProxy<'a>,
+    decoding_instruction: LoaderProxy<'a>,
     mime_type: String,
 }
 
@@ -121,7 +121,7 @@ impl<'a> DecoderProcess<'a> {
 
         let dbus_connection = dbus_result.await?;
 
-        let decoding_instruction = DecodingProxy::new(&dbus_connection)
+        let decoding_instruction = LoaderProxy::new(&dbus_connection)
             .await
             .expect("Failed to create decoding instruction proxy");
 
@@ -145,7 +145,7 @@ impl<'a> DecoderProcess<'a> {
         let mime_type = self.mime_type.clone();
 
         let mut details = InitializationDetails::default();
-        details.base_dir = base_dir.into();
+        details.base_dir = base_dir;
 
         let image_info = self
             .decoding_instruction
@@ -168,10 +168,7 @@ impl<'a> DecoderProcess<'a> {
     }
 
     pub async fn decode_frame(&self, frame_request: FrameRequest) -> Result<api::Frame, Error> {
-        let mut frame = self
-            .decoding_instruction
-            .decode_frame(frame_request)
-            .await?;
+        let mut frame = self.decoding_instruction.frame(frame_request).await?;
 
         let Texture::MemFd(fd) = &frame.texture;
         let raw_fd = fd.as_raw_fd();
@@ -263,12 +260,12 @@ use std::io::Write;
 const BUF_SIZE: usize = u16::MAX as usize;
 
 #[zbus::dbus_proxy(
-    interface = "org.gnome.glycin.Decoding",
+    interface = "org.gnome.glycin.Loader",
     default_path = "/org/gnome/glycin"
 )]
-trait Decoding {
+trait Loader {
     async fn init(&self, init_request: InitRequest) -> Result<ImageInfo, RemoteError>;
-    async fn decode_frame(&self, frame_request: FrameRequest) -> Result<Frame, RemoteError>;
+    async fn frame(&self, frame_request: FrameRequest) -> Result<Frame, RemoteError>;
 }
 
 const fn gdk_memory_format(format: MemoryFormat) -> gdk::MemoryFormat {

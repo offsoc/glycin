@@ -79,13 +79,13 @@ impl Config {
         keyfile.load_from_bytes(&bytes, glib::KeyFileFlags::NONE)?;
 
         for group in keyfile.groups() {
-            let mut elements = group.to_str().split(':');
+            let mut elements = group.split(':');
             let kind = elements.next();
             let mime_type = elements.next();
 
             if kind == Some("loader") {
                 if let Some(mime_type) = mime_type {
-                    let group = group.to_str().trim();
+                    let group = group.trim();
                     if let Ok(exec) = keyfile.string(group, "Exec") {
                         let expose_base_dir =
                             keyfile.boolean(group, "ExposeBaseDir").unwrap_or_default();

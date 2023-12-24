@@ -1,6 +1,6 @@
 use std::{os::unix::net::UnixStream, sync::Mutex};
 
-const INTERFACE_NAME: &str = "org.gnome.glycin.Decoding";
+const INTERFACE_NAME: &str = "org.gnome.glycin.Loader";
 
 #[test]
 #[ignore]
