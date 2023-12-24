@@ -1,7 +1,6 @@
 use std::ffi::CString;
 use std::ops::{Deref, DerefMut};
-use std::os::fd::FromRawFd;
-use std::os::fd::RawFd;
+use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
 
 use zbus::zvariant;
 
@@ -9,7 +8,7 @@ use super::Texture;
 
 #[derive(Debug)]
 pub struct SharedMemory {
-    memfd: RawFd,
+    memfd: OwnedFd,
     pub mmap: memmap::MmapMut,
 }
 
@@ -21,15 +20,19 @@ impl SharedMemory {
                 | nix::sys::memfd::MemFdCreateFlag::MFD_ALLOW_SEALING,
         )
         .expect("Failed to create memfd");
-        nix::unistd::ftruncate(memfd, size.try_into().expect("Required memory too large"))
+
+        nix::unistd::ftruncate(&memfd, size.try_into().expect("Required memory too large"))
             .expect("Failed to set memfd size");
-        let mmap = unsafe { memmap::MmapMut::map_mut(memfd) }.expect("Mailed to mmap memfd");
+
+        let raw_fd = memfd.as_raw_fd();
+        let mmap = unsafe { memmap::MmapMut::map_mut(raw_fd) }.expect("Mailed to mmap memfd");
 
         Self { mmap, memfd }
     }
 
     pub fn into_texture(self) -> Texture {
-        let owned_fd = unsafe { zvariant::OwnedFd::from_raw_fd(self.memfd) };
+        let owned_fd = unsafe { zvariant::OwnedFd::from_raw_fd(self.memfd.as_raw_fd()) };
+        std::mem::forget(self.memfd);
         Texture::MemFd(owned_fd)
     }
 }

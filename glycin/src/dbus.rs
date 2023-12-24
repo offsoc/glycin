@@ -175,6 +175,7 @@ impl<'a> DecoderProcess<'a> {
 
         let Texture::MemFd(fd) = &frame.texture;
         let raw_fd = fd.as_raw_fd();
+        let borrowed_fd = unsafe { std::os::fd::BorrowedFd::borrow_raw(raw_fd) };
         let mut mmap = unsafe { memmap::MmapMut::map_mut(raw_fd) }?;
 
         if mmap.len() < (frame.stride * frame.height).try_usize()? {
@@ -205,7 +206,7 @@ impl<'a> DecoderProcess<'a> {
             drop(mmap);
 
             nix::unistd::ftruncate(
-                raw_fd,
+                borrowed_fd,
                 (frame.height * frame.stride)
                     .try_into()
                     .map_err(|_| ConversionTooLargerError)?,
