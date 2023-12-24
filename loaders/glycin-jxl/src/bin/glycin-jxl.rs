@@ -6,7 +6,7 @@ use std::io::Cursor;
 use std::io::Read;
 use std::sync::Mutex;
 
-use jxl_oxide::{JxlImage, PixelFormat, RenderResult};
+use jxl_oxide::{JxlImage, PixelFormat};
 
 fn main() {
     Communication::spawn(ImgDecoder::default());
@@ -14,7 +14,7 @@ fn main() {
 
 #[derive(Default)]
 pub struct ImgDecoder {
-    pub decoder: Mutex<Option<JxlImage<UnixStream>>>,
+    pub decoder: Mutex<Option<JxlImage>>,
 }
 
 impl Decoder for ImgDecoder {
@@ -37,17 +37,14 @@ impl Decoder for ImgDecoder {
     }
 
     fn decode_frame(&self, _frame_request: FrameRequest) -> Result<Frame, DecoderError> {
-        let Some(mut image) = std::mem::take(&mut *self.decoder.lock().unwrap()) else {
+        let Some(image) = std::mem::take(&mut *self.decoder.lock().unwrap()) else {
             return Err(DecoderError::InternalDecoderError);
         };
 
-        let mut renderer = image.renderer();
-
-        let RenderResult::Done(render) = renderer.render_next_frame().unwrap() else {
-            return Err(DecoderError::InternalDecoderError);
-        };
-
-        let buffer = render.image();
+        let buffer = image
+            .render_frame(0)
+            .map_err(|x| DecoderError::DecodingError(x.to_string()))?
+            .image();
 
         // Buffer with channel size u16 = 2 bytes
         let mut memory = SharedMemory::new(buffer.buf().len().try_u64()? * 2);
@@ -62,7 +59,7 @@ impl Decoder for ImgDecoder {
             .read_exact(&mut memory)
             .unwrap();
         let texture = memory.into_texture();
-        let memory_format = pixel_to_memory_format(renderer.pixel_format());
+        let memory_format = pixel_to_memory_format(image.pixel_format());
 
         let mut frame = Frame::new(
             buffer.width().try_u32()?,
@@ -70,7 +67,7 @@ impl Decoder for ImgDecoder {
             memory_format,
             texture,
         );
-        frame.details.iccp = Some(renderer.rendered_icc()).into();
+        frame.details.iccp = Some(image.rendered_icc()).into();
 
         Ok(frame)
     }

@@ -11,5 +11,5 @@ rust-version.workspace = true
 
 [dependencies]
 glycin-utils = { path = "../../glycin-utils/", features = ["loader-utils"] }
-jxl-oxide = "0.3.0"
+jxl-oxide = "0.5.0"
 safe-transmute = "0.11.2"
