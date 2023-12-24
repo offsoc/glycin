@@ -20,7 +20,9 @@ serde = { version = "1.0.162", features = ["derive"] }
 zbus = "3.13.1"
 
 [features]
-image-rs = ["image"]
+default = ["loader-utils"]
+image-rs = ["dep:image", "loader-utils"]
+loader-utils = []
 
 [package.metadata.docs.rs]
 all-features = true

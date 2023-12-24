@@ -15,6 +15,7 @@ use zbus::zvariant;
 use std::os::fd::AsRawFd;
 use std::os::fd::FromRawFd;
 use std::os::fd::OwnedFd;
+use std::os::unix::net::UnixStream;
 use std::sync::Arc;
 
 #[derive(Clone, Debug)]

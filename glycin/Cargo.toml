@@ -17,7 +17,7 @@ async-std = { version = "1.12.0", features = ["unstable"] }
 futures = "0.3.28"
 gdk = { package = "gdk4", version = "0.7.1", features = ["v4_12"] }
 gio = "0.18.1"
-glycin-utils = { version = "1.0.0-alpha", path = "../glycin-utils/" }
+glycin-utils = { version = "1.0.0-alpha", path = "../glycin-utils/", default-features = false }
 lcms2 = "6.0.3"
 lcms2-sys = "4.0.4"
 memfd = "0.6.3"
