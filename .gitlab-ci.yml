@@ -5,13 +5,19 @@ variables:
 .install_dependencies:
   before_script:
     - apt update
-    - apt install -y git curl meson pkg-config build-essential liblcms2-dev libgtk-4-dev libdrm-dev libheif-dev gettext clang mold bubblewrap
-    - git clone --depth 1 https://gitlab.freedesktop.org/cairo/cairo.git
-    - meson setup cairo/builddir cairo
-    - ninja install -C cairo/builddir
-    - git clone --depth 1 https://gitlab.gnome.org/GNOME/gtk.git
-    - meson setup -Dmedia-gstreamer=disabled -Dbuild-testsuite=false -Dbuild-examples=false -Dbuild-tests=false gtk/builddir gtk
-    - ninja install -C gtk/builddir
+    - apt install -y git curl meson pkg-config build-essential liblcms2-dev gettext clang mold bubblewrap
+    # libdrm-dev libheif-dev libgtk-4-dev
+
+    #- git clone --depth 1 https://gitlab.freedesktop.org/cairo/cairo.git
+    #- meson setup cairo/builddir cairo
+    #- ninja install -C cairo/builddir
+    #- git clone --depth 1 https://gitlab.gnome.org/GNOME/gtk.git
+    #- meson setup -Dmedia-gstreamer=disabled -Dbuild-testsuite=false -Dbuild-examples=false -Dbuild-tests=false gtk/builddir gtk
+    #- ninja install -C gtk/builddir
+
+    - echo "deb https://deb.debian.org/debian/ testing main" >> /etc/apt/sources.list
+    - apt update
+    - apt install -y libheif-dev libgtk-4-dev libcairo2-dev
   artifacts:
     when: always
     paths:

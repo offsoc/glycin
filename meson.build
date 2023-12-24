@@ -8,7 +8,7 @@ project(
 dependency('gtk4', version: '>= 4.12.0')
 
 if 'glycin-heif' in get_option('loaders')
-  dependency('libheif', version: '>= 1.14.2')
+  dependency('libheif', version: '>= 1.17.0')
 endif
 
 if 'glycin-svg' in get_option('loaders')
