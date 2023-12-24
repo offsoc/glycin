@@ -10,7 +10,7 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-glycin-utils = { path = "../../glycin-utils/" }
+glycin-utils = { path = "../../glycin-utils/", features = ["loader-utils"] }
 librsvg = "2.57.0"
 gio = "0.18"
 cairo-rs = "0.18"

@@ -10,6 +10,6 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-glycin-utils = { path = "../../glycin-utils/" }
+glycin-utils = { path = "../../glycin-utils/", features = ["loader-utils"] }
 libheif-rs = "0.20.0"
 safe-transmute = "0.11.2"

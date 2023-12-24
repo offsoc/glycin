@@ -20,7 +20,7 @@ serde = { version = "1.0.162", features = ["derive"] }
 zbus = "3.13.1"
 
 [features]
-default = ["loader-utils"]
+default = []
 image-rs = ["dep:image", "loader-utils"]
 loader-utils = []
 

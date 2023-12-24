@@ -6,8 +6,10 @@ pub mod dbus;
 pub mod error;
 #[cfg(feature = "image-rs")]
 pub mod image_rs;
+#[cfg(feature = "loader-utils")]
 pub mod instruction_handler;
 pub mod save_conversion;
+#[cfg(feature = "loader-utils")]
 pub mod shared_memory;
 
 pub use dbus::*;

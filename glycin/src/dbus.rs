@@ -42,6 +42,9 @@ impl<'a> DecoderProcess<'a> {
             .set_nonblocking(true)
             .expect("Couldn't set nonblocking");
 
+        #[cfg(feature = "tokio")]
+        let unix_stream = tokio::net::UnixStream::from_std(unix_stream)?;
+
         let (bin, args, final_arg) = match sandbox_mechanism {
             SandboxMechanism::Bwrap => (
                 "bwrap".into(),

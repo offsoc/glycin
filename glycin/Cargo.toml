@@ -11,6 +11,9 @@ repository.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 
+[features]
+tokio = ["dep:tokio", "zbus/tokio"]
+
 [dependencies]
 anyhow = { version = "1.0.71", features = ["backtrace"] }
 async-std = { version = "1.12.0", features = ["unstable"] }
@@ -24,6 +27,7 @@ memfd = "0.6.3"
 memmap = { package = "memmap2", version = "0.7.0" }
 nix = "0.26.2"
 rgb = "0.8.36"
+tokio = { version = "1.35.1", optional = true }
 zbus = "3.13.1"
 
 [package.metadata.docs.rs]
