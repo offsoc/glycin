@@ -44,18 +44,15 @@ impl Decoder for ImgDecoder {
             .map_err(|x| DecoderError::DecodingError(x.to_string()))?
             .image();
 
-        // Buffer with channel size u16 = 2 bytes
-        let mut memory = SharedMemory::new(buffer.buf().len().try_u64()? * 2);
+        let mut memory = SharedMemory::new(buffer.buf().len().try_u64()?);
 
-        let u16_buffer: Vec<u16> = buffer
+        let u8_buffer: Vec<u8> = buffer
             .buf()
             .iter()
-            .map(|x| (x * u16::MAX as f32) as u16)
+            .map(|x| (x * u8::MAX as f32) as u8)
             .collect();
 
-        Cursor::new(safe_transmute::transmute_to_bytes(&u16_buffer))
-            .read_exact(&mut memory)
-            .unwrap();
+        Cursor::new(&u8_buffer).read_exact(&mut memory).unwrap();
         let texture = memory.into_texture();
         let memory_format = pixel_to_memory_format(image.pixel_format());
 
@@ -73,11 +70,11 @@ impl Decoder for ImgDecoder {
 
 fn pixel_to_memory_format(format: PixelFormat) -> MemoryFormat {
     match format {
-        PixelFormat::Gray => MemoryFormat::G16,
-        PixelFormat::Graya => MemoryFormat::G16a16,
-        PixelFormat::Rgb => MemoryFormat::R16g16b16,
-        PixelFormat::Rgba => MemoryFormat::R16g16b16a16,
-        PixelFormat::Cmyk => MemoryFormat::R16g16b16,
-        PixelFormat::Cmyka => MemoryFormat::R16g16b16a16,
+        PixelFormat::Gray => MemoryFormat::G8,
+        PixelFormat::Graya => MemoryFormat::G8a8,
+        PixelFormat::Rgb => MemoryFormat::R8g8b8,
+        PixelFormat::Rgba => MemoryFormat::R8g8b8a8,
+        PixelFormat::Cmyk => MemoryFormat::R8g8b8,
+        PixelFormat::Cmyka => MemoryFormat::R8g8b8a8,
     }
 }
