@@ -1,7 +1,8 @@
 //! # Overview
 //!
 //! Glycin allows to decode images into [`gdk::Texture`]s and to extract image metadata.
-//! The decoding happens in sandboxed modular image decoders.
+//! The decoding happens in sandboxed modular image loaders that have to be provided as
+//! binaries. The [`glycin-utils`] for more details.
 //!
 //! # Example
 //!
@@ -12,14 +13,16 @@
 //! let image = ImageRequest::new(file).request().await?;
 //!
 //! let height = image.info().height;
-//! let texture = image.next_frame().await?;
+//! let frame = image.next_frame().await?;
 //! # Ok::<(), Error>(()) });
 //! ```
-
-pub mod dbus;
+//!
+//! You can pass the [`texture`](Frame#structfield.texture) of a [`Frame`] to
+//! [`gtk4::Image::from_paintable()`](gtk4::Image::from_paintable()) to display the image.
 
 mod api;
 mod config;
+mod dbus;
 mod icc;
 
 pub use api::*;
