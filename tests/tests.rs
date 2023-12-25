@@ -1,6 +1,7 @@
-use gdk::prelude::*;
 use std::ffi::OsString;
 use std::path::{Path, PathBuf};
+
+use gdk::prelude::*;
 
 #[test]
 fn color() {

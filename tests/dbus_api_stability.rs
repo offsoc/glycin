@@ -1,4 +1,5 @@
-use std::{os::unix::net::UnixStream, sync::Mutex};
+use std::os::unix::net::UnixStream;
+use std::sync::Mutex;
 
 const INTERFACE_NAME: &str = "org.gnome.glycin.Loader";
 

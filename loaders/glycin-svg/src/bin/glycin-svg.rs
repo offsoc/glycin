@@ -1,10 +1,10 @@
+use std::io::{Cursor, Read};
+use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::Mutex;
+
 use gio::prelude::*;
 use glycin_utils::anyhow::Context;
 use glycin_utils::*;
-use std::io::Cursor;
-use std::io::Read;
-use std::sync::mpsc::{channel, Receiver, Sender};
-use std::sync::Mutex;
 
 /// Current librsvg limit on maximum dimensions. See
 /// <https://gitlab.gnome.org/GNOME/librsvg/-/issues/938>

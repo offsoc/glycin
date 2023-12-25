@@ -1,9 +1,10 @@
-use async_std::{fs, path, prelude::*};
-use gio::glib;
-
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::sync::OnceLock;
+
+use async_std::prelude::*;
+use async_std::{fs, path};
+use gio::glib;
 
 use crate::dbus::Error;
 

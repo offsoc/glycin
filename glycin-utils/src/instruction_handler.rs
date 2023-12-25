@@ -1,9 +1,8 @@
-pub use anyhow;
-
-use std::os::fd::AsRawFd;
-use std::os::fd::{FromRawFd, IntoRawFd};
+use std::os::fd::{AsRawFd, FromRawFd, IntoRawFd};
 pub use std::os::unix::net::UnixStream;
 use std::sync::Mutex;
+
+pub use anyhow;
 
 use crate::dbus::*;
 use crate::error::*;

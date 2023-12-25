@@ -1,11 +1,9 @@
 #![allow(clippy::large_enum_variant)]
 
-use glycin_utils::*;
-
-use std::io::Cursor;
-use std::io::Read;
+use std::io::{Cursor, Read};
 use std::sync::Mutex;
 
+use glycin_utils::*;
 use jxl_oxide::{JxlImage, PixelFormat};
 
 fn main() {

@@ -1,14 +1,12 @@
 #![allow(clippy::large_enum_variant)]
 
-use glycin_utils::image_rs::Handler;
-use glycin_utils::*;
-use image::codecs;
-use image::AnimationDecoder;
-
-use std::io::Cursor;
-use std::io::Read;
+use std::io::{Cursor, Read};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::Mutex;
+
+use glycin_utils::image_rs::Handler;
+use glycin_utils::*;
+use image::{codecs, AnimationDecoder};
 
 fn main() {
     Communication::spawn(ImgDecoder::default());

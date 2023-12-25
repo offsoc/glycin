@@ -1,8 +1,7 @@
-use serde::{Deserialize, Serialize};
-use zbus::zvariant::{self, DeserializeDict, SerializeDict};
-use zbus::zvariant::{Optional, Type};
-
 use std::time::Duration;
+
+use serde::{Deserialize, Serialize};
+use zbus::zvariant::{self, DeserializeDict, Optional, SerializeDict, Type};
 
 #[derive(Deserialize, Serialize, Type, Debug)]
 pub struct InitRequest {

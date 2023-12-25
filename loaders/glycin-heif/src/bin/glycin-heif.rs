@@ -1,9 +1,9 @@
+use std::cell::OnceCell;
+use std::io::{Cursor, Read};
+use std::sync::Mutex;
+
 use glycin_utils::*;
 use libheif_rs::{ColorProfile, ColorSpace, HeifContext, LibHeif, RgbChroma, StreamReader};
-use std::cell::OnceCell;
-use std::io::Cursor;
-use std::io::Read;
-use std::sync::Mutex;
 
 fn main() {
     Communication::spawn(ImgDecoder::default());

@@ -1,12 +1,13 @@
-use crate::config;
-use crate::dbus::*;
-use gio::prelude::*;
-use glycin_utils::ImageInfo;
 use std::sync::OnceLock;
 
+use gio::prelude::*;
+pub use glycin_utils::FrameDetails;
+use glycin_utils::ImageInfo;
+
+use crate::config;
 pub use crate::config::MimeType;
 pub use crate::dbus::Error;
-pub use glycin_utils::FrameDetails;
+use crate::dbus::*;
 
 static IS_FLATPAKED: OnceLock<bool> = OnceLock::new();
 

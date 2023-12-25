@@ -1,22 +1,19 @@
 //! Internal DBus API
 
-use crate::api::{self, SandboxMechanism};
-use crate::config;
+use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
+use std::os::unix::net::UnixStream;
+use std::sync::Arc;
 
 use async_std::process::ExitStatus;
 use futures::channel::oneshot;
-use futures::future;
-use futures::FutureExt;
+use futures::{future, FutureExt};
 use gdk::prelude::*;
 use gio::glib;
 use glycin_utils::*;
 use zbus::zvariant;
 
-use std::os::fd::AsRawFd;
-use std::os::fd::FromRawFd;
-use std::os::fd::OwnedFd;
-use std::os::unix::net::UnixStream;
-use std::sync::Arc;
+use crate::api::{self, SandboxMechanism};
+use crate::config;
 
 #[derive(Clone, Debug)]
 pub struct DecoderProcess<'a> {

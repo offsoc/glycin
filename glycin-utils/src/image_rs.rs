@@ -1,6 +1,5 @@
-use crate::FrameDetails;
-
 use super::{Frame, ImageInfo, MemoryFormat, SharedMemory};
+use crate::FrameDetails;
 
 #[derive(Default, Clone, Debug)]
 pub struct Handler {
