@@ -1,13 +1,14 @@
-use glycin_utils::{Frame, MemoryFormat};
+use glycin_utils::MemoryFormat;
+use memmap::MmapMut;
 
-pub fn apply_transformation(frame: &Frame, mmap: &mut [u8]) -> anyhow::Result<()> {
-    if let Some(iccp) = frame.details.iccp.as_ref() {
-        let memory_format = frame.memory_format;
-
-        transform(iccp, memory_format, mmap).map_err(Into::into)
-    } else {
-        Ok(())
-    }
+pub fn apply_transformation(
+    iccp: &[u8],
+    memory_format: MemoryFormat,
+    mut mmap: MmapMut,
+) -> anyhow::Result<()> {
+    let result = transform(iccp, memory_format, &mut mmap).map_err(Into::into);
+    drop(mmap);
+    result
 }
 
 fn transform(

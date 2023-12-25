@@ -184,38 +184,47 @@ impl<'a> DecoderProcess<'a> {
             return Err(Error::StrideTooSmall(format!("{:?}", frame)));
         }
 
-        // Align stride with pixel size if necessary
-        let mut mmap = if frame.stride % frame.memory_format.n_bytes().u32() == 0 {
-            mmap
-        } else {
-            let width = frame.width.try_usize()? * frame.memory_format.n_bytes().usize();
-            let stride = frame.stride.try_usize()?;
-            let mut source = vec![0; width];
-            for row in 1..frame.height.try_usize()? {
-                source.copy_from_slice(&mmap[row * stride..row * stride + width]);
-                mmap[row * width..(row + 1) * width].copy_from_slice(&source);
+        if let Some(icc_profile) = frame.details.iccp.clone() {
+            // Align stride with pixel size if necessary
+            let mmap = if frame.stride % frame.memory_format.n_bytes().u32() != 0 {
+                let width = frame.width.try_usize()? * frame.memory_format.n_bytes().usize();
+                let stride = frame.stride.try_usize()?;
+                let mut source = vec![0; width];
+                for row in 1..frame.height.try_usize()? {
+                    source.copy_from_slice(&mmap[row * stride..row * stride + width]);
+                    mmap[row * width..(row + 1) * width].copy_from_slice(&source);
+                }
+                frame.stride = width.try_u32()?;
+
+                // This mmap would have the wrong size after ftruncate
+                drop(mmap);
+
+                nix::unistd::ftruncate(
+                    borrowed_fd,
+                    (frame.height * frame.stride)
+                        .try_into()
+                        .map_err(|_| ConversionTooLargerError)?,
+                )
+                .unwrap();
+
+                // Need a new mmap with correct size
+                unsafe { memmap::MmapMut::map_mut(raw_fd) }?
+            } else {
+                mmap
+            };
+
+            let memory_format = frame.memory_format;
+            let icc_result: Result<(), anyhow::Error> = spawn_blocking(move || {
+                crate::icc::apply_transformation(&icc_profile, memory_format, mmap)
+            })
+            .await;
+
+            if let Err(err) = icc_result {
+                eprintln!("Failed to apply ICC profile: {err}");
             }
-            frame.stride = width.try_u32()?;
-
-            // This mmap would have the wrong size after ftruncate
+        } else {
             drop(mmap);
-
-            nix::unistd::ftruncate(
-                borrowed_fd,
-                (frame.height * frame.stride)
-                    .try_into()
-                    .map_err(|_| ConversionTooLargerError)?,
-            )
-            .unwrap();
-
-            // Need a new mmap with correct size
-            unsafe { memmap::MmapMut::map_mut(raw_fd) }?
-        };
-
-        if let Err(err) = crate::icc::apply_transformation(&frame, &mut mmap) {
-            eprintln!("Failed to apply ICC profile: {err}");
         }
-        drop(mmap);
 
         let mfd = memfd::Memfd::try_from_fd(raw_fd).unwrap();
         // 🦭
