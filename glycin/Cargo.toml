@@ -16,8 +16,11 @@ tokio = ["dep:tokio", "zbus/tokio"]
 
 [dependencies]
 anyhow = { version = "1.0.71", features = ["backtrace"] }
-async-std = { version = "1.12.0", features = ["unstable"] }
-futures = "0.3.28"
+async-fs = "2.1.0"
+async-global-executor = "2.4.1"
+async-process = "2.0.1"
+futures-channel = "0.3.30"
+futures-util = "0.3.30"
 gdk = { package = "gdk4", version = "0.7.1", features = ["v4_12"] }
 gio = "0.18.1"
 glycin-utils = { version = "1.0.0-alpha", path = "../glycin-utils/", default-features = false }

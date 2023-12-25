@@ -13,7 +13,7 @@ pub struct Communication {
 
 impl Communication {
     pub fn spawn(decoder: impl Decoder + 'static) {
-        async_std::task::block_on(async move {
+        futures_lite::future::block_on(async move {
             let _connection = Communication::new(decoder).await;
             std::future::pending::<()>().await;
         })

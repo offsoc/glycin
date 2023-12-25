@@ -1,5 +1,8 @@
+use std::path::Path;
 use std::sync::OnceLock;
 
+use async_global_executor::spawn_blocking;
+use gdk::gio;
 use gio::prelude::*;
 pub use glycin_utils::FrameDetails;
 use glycin_utils::ImageInfo;
@@ -17,7 +20,7 @@ async fn is_flatpaked() -> bool {
     if let Some(result) = IS_FLATPAKED.get() {
         *result
     } else {
-        let flatpaked = async_std::path::Path::new("/.flatpak-info").is_file().await;
+        let flatpaked = spawn_blocking(|| Path::new("/.flatpak-info").is_file()).await;
         *IS_FLATPAKED.get_or_init(|| flatpaked)
     }
 }

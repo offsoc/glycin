@@ -8,7 +8,7 @@
 //!
 //! ```no_run
 //! # use glycin::*;
-//! # async_std::task::block_on(async {
+//! # async_global_executor::block_on(async {
 //! let file = gio::File::for_path("image.jpg");
 //! let image = ImageRequest::new(file).request().await?;
 //!

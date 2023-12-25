@@ -6,7 +6,7 @@ const INTERFACE_NAME: &str = "org.gnome.glycin.Loader";
 #[test]
 #[ignore]
 fn dbus_api_stability() {
-    async_std::task::spawn(start_dbus());
+    async_global_executor::spawn(start_dbus()).detach();
     let output = std::process::Command::new("busctl")
         .args([
             "introspect",

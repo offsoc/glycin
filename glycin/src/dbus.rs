@@ -2,11 +2,12 @@
 
 use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
 use std::os::unix::net::UnixStream;
+use std::process::ExitStatus;
 use std::sync::Arc;
 
-use async_std::process::ExitStatus;
-use futures::channel::oneshot;
-use futures::{future, FutureExt};
+use async_global_executor::{block_on, spawn_blocking};
+use futures_channel::oneshot;
+use futures_util::{future, FutureExt};
 use gdk::prelude::*;
 use gio::glib;
 use glycin_utils::*;
@@ -78,7 +79,7 @@ impl<'a> DecoderProcess<'a> {
             }
         };
 
-        let mut command = async_std::process::Command::new(bin);
+        let mut command = async_process::Command::new(bin);
 
         command.stdin(OwnedFd::from(fd_decoder));
 
@@ -100,7 +101,7 @@ impl<'a> DecoderProcess<'a> {
             .build()
             .shared();
 
-        futures::select! {
+        futures_util::select! {
             _result = dbus_result.clone().fuse() => Ok(()),
             _result = cancellable.future().fuse() => {
                 let _result = subprocess.kill();
@@ -154,9 +155,9 @@ impl<'a> DecoderProcess<'a> {
             .shared();
 
         let reader_error = gfile_worker.error();
-        futures::pin_mut!(reader_error);
+        futures_util::pin_mut!(reader_error);
 
-        futures::select! {
+        futures_util::select! {
             _result = image_info.clone().fuse() => Ok(()),
             result = reader_error.fuse() => result,
         }?;
@@ -310,7 +311,7 @@ impl GFileWorker {
         let (first_bytes_send, first_bytes_recv) = oneshot::channel();
         let (writer_send, writer_recv) = oneshot::channel();
 
-        std::thread::spawn(move || {
+        spawn_blocking(move || {
             Self::handle_errors(error_send, move || {
                 let reader = gfile.read(Some(&cancellable))?;
                 let mut buf = vec![0; BUF_SIZE];
@@ -321,7 +322,7 @@ impl GFileWorker {
                     .send(first_bytes.clone())
                     .or(Err(Error::InternalCommunicationCanceled))?;
 
-                let mut writer: UnixStream = async_std::task::block_on(writer_recv)?;
+                let mut writer: UnixStream = block_on(writer_recv)?;
 
                 writer.write_all(&first_bytes)?;
                 drop(first_bytes);
@@ -336,7 +337,8 @@ impl GFileWorker {
 
                 Ok(())
             })
-        });
+        })
+        .detach();
 
         GFileWorker {
             file,
@@ -376,7 +378,7 @@ impl GFileWorker {
     }
 
     pub async fn head(&self) -> Result<Arc<Vec<u8>>, Error> {
-        futures::select!(
+        futures_util::select!(
             err = self.error_recv.clone() => err?,
             _bytes = self.first_bytes_recv.clone() => Ok(()),
         )?;

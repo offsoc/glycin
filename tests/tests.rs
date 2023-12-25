@@ -5,27 +5,27 @@ use gdk::prelude::*;
 
 #[test]
 fn color() {
-    async_std::task::block_on(test_dir("test-images/images/color"));
+    async_global_executor::block_on(test_dir("test-images/images/color"));
 }
 
 #[test]
 fn color_iccp_pro() {
-    async_std::task::block_on(test_dir("test-images/images/color-iccp-pro"));
+    async_global_executor::block_on(test_dir("test-images/images/color-iccp-pro"));
 }
 
 #[test]
 fn gray_iccp() {
-    async_std::task::block_on(test_dir("test-images/images/gray-iccp"));
+    async_global_executor::block_on(test_dir("test-images/images/gray-iccp"));
 }
 
 #[test]
 fn icon() {
-    async_std::task::block_on(test_dir("test-images/images/icon"));
+    async_global_executor::block_on(test_dir("test-images/images/icon"));
 }
 
 #[test]
 fn exif() {
-    async_std::task::block_on(test_dir("test-images/images/exif"));
+    async_global_executor::block_on(test_dir("test-images/images/exif"));
 }
 
 #[allow(dead_code)]

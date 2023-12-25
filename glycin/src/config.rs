@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use std::ffi::OsStr;
+use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
-use async_std::prelude::*;
-use async_std::{fs, path};
+use futures_util::StreamExt;
 use gio::glib;
 
 use crate::dbus::Error;
@@ -22,7 +22,7 @@ pub struct Config {
 
 #[derive(Debug, Clone)]
 pub struct ImageDecoderConfig {
-    pub exec: std::path::PathBuf,
+    pub exec: PathBuf,
     pub expose_base_dir: bool,
 }
 
@@ -53,7 +53,7 @@ impl Config {
             data_dir.push(format!("{COMPAT_VERSION}+"));
             data_dir.push("conf.d");
 
-            if let Ok(mut config_files) = fs::read_dir(data_dir).await {
+            if let Ok(mut config_files) = async_fs::read_dir(data_dir).await {
                 while let Some(result) = config_files.next().await {
                     if let Ok(entry) = result {
                         if entry.path().extension() == Some(OsStr::new(CONFIG_FILE_EXT)) {
@@ -69,11 +69,8 @@ impl Config {
         config
     }
 
-    async fn load_file(
-        path: &path::Path,
-        config: &mut Config,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let data = async_std::fs::read(path).await?;
+    async fn load_file(path: &Path, config: &mut Config) -> Result<(), Box<dyn std::error::Error>> {
+        let data = async_fs::read(path).await?;
         let bytes = glib::Bytes::from_owned(data);
 
         let keyfile = glib::KeyFile::new();
