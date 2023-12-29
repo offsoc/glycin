@@ -11,6 +11,10 @@ sed -i 's/"glycin-utils",\?//' Cargo.toml
 rm -r glycin-utils
 awk -i inplace -v RS= -v ORS='\n\n' '!/name = "glycin-utils"/' Cargo.lock
 
+sed -i 's/"tools",\?//' Cargo.toml
+rm -r tools
+awk -i inplace -v RS= -v ORS='\n\n' '!/name = "tools"/' Cargo.lock
+
 cat Cargo.toml
 
 # Use crates.io libraries
@@ -20,9 +24,10 @@ for toml in $(find loaders/ -name Cargo.toml); do
 done
 
 sed -i "s/path = \"..\/glycin\/\"/version = \"$VERSION\"/g" tests/Cargo.toml
+sed -i "s/path = \"..\/glycin-utils\/\"/version = \"$VERSION\"/g" tests/Cargo.toml
 
 # Trigger update in Cargo.lock
-for toml in $(find loaders/ -name Cargo.toml); do
+for toml in $(find loaders/ tests/ -name Cargo.toml); do
   cargo add --manifest-path="$toml" glycin-utils@$VERSION
 done
 
