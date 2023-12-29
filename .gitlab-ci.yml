@@ -24,7 +24,7 @@ variables:
       - tests/failures
       - builddir/meson-logs
 i386:
-  image: rust@sha256:51f136e34f1cbb1837a7e1e5e6de581aa7a6a383a52606cd3248653beb11789e
+  image: rust@sha256:05126659e6a1ddfd54def494bd485bb50b19446f61c92cb1c6559aa6cfecd922
   extends: .install_dependencies
   interruptible: true
   script:
