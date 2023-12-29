@@ -1,3 +1,13 @@
+## 1.0.alpha
+
+- Replace async-std with other crates
+- Use a new D-Bus API version 1+ allowing for backward compatible extendability
+
+- glycin: Don't allow access to / in bwrap sandbox
+- glycin: Limit memory using when using bwrap sandbox
+- glycin: Don't block on applying ICC profiles
+- glycin: Add tokio feature for when zbus is used with tokio
+
 ## 0.1.2
 
 - GIF/APNG/WEBP: Assume frame length of 100ms if provided frame length is zero or invalid

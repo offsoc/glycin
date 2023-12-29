@@ -128,7 +128,7 @@ impl Sandbox {
         }
 
         // Make loader binary available if not in /usr. This is useful for testing and
-        // edding loaders in user space.
+        // adding loaders in user space.
         if !self.command.starts_with("/usr") {
             args.push("--ro-bind".into());
             args.push(self.command.clone());
