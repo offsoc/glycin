@@ -1,11 +1,13 @@
-use std::fs::{canonicalize, DirEntry};
-use std::io;
+use std::fs::{canonicalize, DirEntry, File};
+use std::io::{self, BufRead, BufReader};
 use std::os::fd::OwnedFd;
 use std::os::unix::net::UnixStream;
+use std::os::unix::process::CommandExt;
 use std::path::PathBuf;
+use std::process::{Child, Command};
 use std::sync::{Arc, OnceLock};
 
-use async_process::Child;
+use nix::sys::resource;
 
 use crate::{Error, SandboxMechanism};
 
@@ -57,13 +59,18 @@ impl Sandbox {
             }
         };
 
-        let mut command = async_process::Command::new(bin);
+        let mut command = Command::new(bin);
 
         command.stdin(OwnedFd::from(self.stdin));
 
         command.args(args);
         if let Some(arg) = final_arg {
             command.arg(arg);
+        }
+
+        // Set memory limit for sandbox
+        unsafe {
+            command.pre_exec(|| Ok(Self::set_memory_limit()));
         }
 
         let cmd_debug = format!("{:?}", command);
@@ -96,6 +103,7 @@ impl Sandbox {
             .map(|x| (*x).into())
             .collect::<Vec<_>>(),
         );
+
         let system = SystemSetup::cached().await.as_ref().unwrap();
 
         // Symlink paths like /usr/lib64 to /lib64
@@ -128,6 +136,37 @@ impl Sandbox {
         }
 
         Ok(args)
+    }
+
+    fn set_memory_limit() {
+        // Default to 1 GB memory limit
+        let mut limit: resource::rlim_t = 1024 * 1024 * 1024;
+
+        // Lookup free memory
+        if let Ok(file) = File::open("/proc/meminfo") {
+            let meminfo = BufReader::new(file);
+
+            for line in meminfo.lines() {
+                if let Ok(line) = line {
+                    if line.starts_with("MemAvailable:") {
+                        if let Some(value) = line
+                            .split(' ')
+                            .filter(|x| !x.is_empty())
+                            .nth(1)
+                            .and_then(|x| x.parse::<resource::rlim_t>().ok())
+                        {
+                            limit = value.saturating_mul(1024);
+                            // Keep 200 MB free
+                            limit = limit.saturating_sub(1024 * 1024 * 200);
+                        }
+                    }
+                }
+            }
+        }
+
+        if let Err(err) = resource::setrlimit(resource::Resource::RLIMIT_AS, limit, limit) {
+            eprintln!("Error setrlimit(RLIMIT_AS, {limit}): {err}");
+        }
     }
 }
 

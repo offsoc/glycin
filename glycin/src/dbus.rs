@@ -11,6 +11,7 @@ use futures_util::{future, FutureExt};
 use gdk::prelude::*;
 use gio::glib;
 use glycin_utils::*;
+use nix::sys::signal;
 use zbus::zvariant;
 
 use crate::api::{self, SandboxMechanism};
@@ -65,20 +66,22 @@ impl<'a> DecoderProcess<'a> {
             .build()
             .shared();
 
+        let subprocess_id = nix::unistd::Pid::from_raw(subprocess.id().try_into().unwrap());
+
         futures_util::select! {
             _result = dbus_result.clone().fuse() => Ok(()),
             _result = cancellable.future().fuse() => {
-                let _result = subprocess.kill();
+                let _result = signal::kill(subprocess_id, signal::Signal::SIGKILL);
                 Err(glib::Error::from(gio::Cancelled).into())
             },
-            return_status = subprocess.status().fuse() => match return_status {
+            return_status = spawn_blocking(move || subprocess.wait()).fuse() => match return_status {
                 Ok(status) => Err(Error::PrematureExit(status)),
                 Err(err) => Err(err.into()),
             }
         }?;
 
         cancellable.connect_cancelled_local(move |_| {
-            let _result = subprocess.kill();
+            let _result = signal::kill(subprocess_id, signal::Signal::SIGKILL);
         });
 
         let dbus_connection = dbus_result.await?;
