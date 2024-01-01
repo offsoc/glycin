@@ -221,7 +221,9 @@ impl SystemSetup {
         let path = entry.path();
 
         if let Some(last_segment) = path.file_name() {
-            if last_segment.as_encoded_bytes().starts_with(b"lib") {
+            // TODO: Use this code again when switching to 1.74
+            //if last_segment.as_encoded_bytes().starts_with(b"lib") {
+            if last_segment.to_string_lossy().starts_with("lib") {
                 let metadata = entry.metadata()?;
                 if metadata.is_dir() {
                     // Lib dirs like /lib
