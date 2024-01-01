@@ -152,7 +152,9 @@ fn decode(context: HeifContext, mime_type: &str) -> Result<Frame, DecoderError> 
     let mut frame = Frame::new(plane.width, plane.height, memory_format, texture);
     frame.stride = plane.stride.try_u32()?;
     frame.details.iccp = icc_profile.into();
-    frame.details.bit_depth = Some(plane.bits_per_pixel).into();
+    if plane.bits_per_pixel > 8 {
+        frame.details.bit_depth = Some(plane.bits_per_pixel).into();
+    }
     frame.details.alpha_channel = Some(handle.has_alpha_channel()).into();
 
     Ok(frame)

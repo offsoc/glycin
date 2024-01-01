@@ -220,7 +220,8 @@ impl ImageRsFormat<Reader> {
             ))
             .format_name("PNG")
             .supports_two_alpha_modes(true)
-            .supports_two_grayscale_modes(true),
+            .supports_two_grayscale_modes(true)
+            .default_bit_depth(8),
             "image/x-portable-bitmap" => Self::new(ImageRsDecoder::Pnm(
                 codecs::pnm::PnmDecoder::new(data).context_failed()?,
             ))
