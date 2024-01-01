@@ -33,4 +33,4 @@ mod sandbox;
 
 pub use api::*;
 pub use config::COMPAT_VERSION;
-pub use glycin_utils::{ImageInfo, RemoteError};
+pub use glycin_utils::{ImageInfo, ImageInfoDetails, RemoteError};
