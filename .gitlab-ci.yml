@@ -34,11 +34,22 @@ i386:
     - meson test -vC builddir
 
 x86_64:
-  image: rust:bookworm
+  image: rust:1.73-bookworm
   extends: .install_dependencies
   interruptible: true
   script:
     - export LD_LIBRARY_PATH=/usr/local/lib/x86_64-linux-gnu/
+    - meson setup -Dprofile=dev builddir
+    - meson test -vC builddir
+
+aarch64:
+  image: rust:bookworm
+  tags:
+    - aarch64
+  extends: .install_dependencies
+  interruptible: true
+  script:
+    - export LD_LIBRARY_PATH=/usr/local/lib/aarch64-linux-gnu/
     - meson setup -Dprofile=dev builddir
     - meson test -vC builddir
 
