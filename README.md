@@ -68,17 +68,16 @@ The following features are supported by the glycin loaders provided in the [load
 | OpenEXR   | image-rs | —   | —    | —    | —   | —         | image-rs                   |
 | PNG       | image-rs | ✔   | ✘    | ✔    | ✘   | ✔         | image-rs                   |
 | PNM       | image-rs | —   | —    | —    | —   | —         | image-rs                   |
-| SVG       | image-rs | ✘   | —    | —    | ✘ * | —         | librsvg + gdk-pixbuf       |
+| SVG       | image-rs | ✘   | —    | —    | ✘   | —         | librsvg + gdk-pixbuf       |
 | TGA       | image-rs | —   | —    | —    | —   | —         | image-rs                   |
 | TIFF      | image-rs | ✔   | —    | ✔    | ✘   | —         | image-rs                   |
-| WEBP      | image-rs | ✔   | —    | ✔    | ✘   | ✔         | image-rs + libwebp (C)     |
+| WEBP      | image-rs | ✔   | —    | ✔    | ✘   | ✔         | image-rs                   |
 
 | Symbol | Meaning                                        |
 |--------|------------------------------------------------|
 | ✔      | Supported                                      |
 | ✘      | Supported by format but not implemented yet    |
 | —      | Not available for this format                  |
-| ？      | Unclear if supported by format, needs research |
 | *      | Unclear if used in practice, needs research    |
 
 ## Building and Testing
@@ -86,6 +85,14 @@ The following features are supported by the glycin loaders provided in the [load
 - The `-Dloaders` option allows to only build certain loaders.
 - The `-Dtest_skip_ext` option allows to skip certain image filename extensions during tests. The `-Dtest_skip_ext=heic` might be needed if x265 is not available.
 - Running integration tests requires the glycin loaders to be installed. By default this is done by `meson test` automatically. This behavior can be changed by setting `-Dtest_skip_install=true`.
+
+### Packaging
+
+Distributions need to package the loader binaries and their configs independent of apps. The loaders build and installed via meson.
+
+Apps will depend on the `glycin` crate to make use of the installed binary loaders.
+
+[![Packaging Status](https://repology.org/badge/vertical-allrepos/glycin-loaders.svg?exclude_unsupported=1&header=)](https://repology.org/project/glycin-loaders/versions)
 
 ## Inner Workings
 
