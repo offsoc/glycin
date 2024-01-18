@@ -11,25 +11,25 @@ pub struct Handler {
 
 impl Handler {
     pub fn format_name(mut self, format_name: impl ToString) -> Self {
-        self.format_name = Some(format_name.to_string()).into();
+        self.format_name = Some(format_name.to_string());
 
         self
     }
 
     pub fn default_bit_depth(mut self, default_bit_depth: u8) -> Self {
-        self.default_bit_depth = Some(default_bit_depth).into();
+        self.default_bit_depth = Some(default_bit_depth);
 
         self
     }
 
     pub fn supports_two_alpha_modes(mut self, supports_two_alpha_modes: bool) -> Self {
-        self.supports_two_alpha_modes = supports_two_alpha_modes.into();
+        self.supports_two_alpha_modes = supports_two_alpha_modes;
 
         self
     }
 
     pub fn supports_two_grayscale_modes(mut self, supports_two_grayscale_modes: bool) -> Self {
-        self.supports_two_grayscale_modes = supports_two_grayscale_modes.into();
+        self.supports_two_grayscale_modes = supports_two_grayscale_modes;
 
         self
     }

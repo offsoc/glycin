@@ -128,7 +128,7 @@ impl Decoder for ImgDecoder {
         let mut image_info = format.info();
 
         let exif = exif::Reader::new().read_from_container(&mut data.clone());
-        image_info.details.exif = exif.ok().map(|x| x.buf().to_vec()).into();
+        image_info.details.exif = exif.ok().map(|x| x.buf().to_vec());
 
         if format.decoder.is_animated() {
             let (send, recv) = channel();

@@ -27,7 +27,7 @@ impl Decoder for ImgDecoder {
         let header = image.image_header();
 
         let mut image_info = ImageInfo::new(header.size.width, header.size.height);
-        image_info.details.format_name = Some(String::from("JPEG XL")).into();
+        image_info.details.format_name = Some(String::from("JPEG XL"));
 
         *self.decoder.lock().unwrap() = Some(image);
 
@@ -62,7 +62,7 @@ impl Decoder for ImgDecoder {
             memory_format,
             texture,
         )?;
-        frame.details.iccp = Some(image.rendered_icc()).into();
+        frame.details.iccp = Some(image.rendered_icc());
 
         Ok(frame)
     }

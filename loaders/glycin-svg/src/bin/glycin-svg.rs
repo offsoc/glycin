@@ -48,9 +48,9 @@ pub fn thread(
 
     let mut image_info = ImageInfo::new(original_width, original_height);
 
-    image_info.details.format_name = Some(String::from("SVG")).into();
-    image_info.details.dimensions_text = dimensions_text(renderer.intrinsic_dimensions()).into();
-    image_info.details.dimensions_inch = dimensions_inch(renderer.intrinsic_dimensions()).into();
+    image_info.details.format_name = Some(String::from("SVG"));
+    image_info.details.dimensions_text = dimensions_text(renderer.intrinsic_dimensions());
+    image_info.details.dimensions_inch = dimensions_inch(renderer.intrinsic_dimensions());
 
     info_send.send(Ok(image_info)).unwrap();
 
