@@ -1,3 +1,4 @@
+use gdk::prelude::*;
 use gio::glib;
 
 fn main() {
@@ -50,6 +51,12 @@ async fn run() -> Result<(), glycin::Error> {
     for _ in 0..n_frames {
         let frame = image.next_frame().await.unwrap();
         println!("[[frame]]");
+        println!(
+            "dimensions = {} x {}",
+            frame.texture.width(),
+            frame.texture.height()
+        );
+        println!("format = {:?}", frame.texture.format());
         println!(
             "delay = {}",
             frame

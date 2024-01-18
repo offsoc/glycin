@@ -2865,6 +2865,7 @@ dependencies = [
 name = "tools"
 version = "1.0.0-alpha.2"
 dependencies = [
+ "gdk4",
  "gio",
  "glycin",
 ]

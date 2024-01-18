@@ -1,3 +1,7 @@
+#![deny(clippy::arithmetic_side_effects)]
+#![deny(clippy::cast_possible_truncation)]
+#![deny(clippy::cast_possible_wrap)]
+
 //! Utilities for building glycin decoders
 
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]

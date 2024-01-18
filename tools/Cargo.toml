@@ -10,5 +10,6 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+gdk = { package = "gdk4", version = "0.7.3" }
 gio = "0.18.3"
 glycin = { path = "../glycin" }
