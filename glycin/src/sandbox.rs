@@ -149,19 +149,17 @@ impl Sandbox {
         if let Ok(file) = File::open("/proc/meminfo") {
             let meminfo = BufReader::new(file);
 
-            for line in meminfo.lines() {
-                if let Ok(line) = line {
-                    if line.starts_with("MemAvailable:") {
-                        if let Some(value) = line
-                            .split(' ')
-                            .filter(|x| !x.is_empty())
-                            .nth(1)
-                            .and_then(|x| x.parse::<resource::rlim_t>().ok())
-                        {
-                            limit = value.saturating_mul(1024);
-                            // Keep 200 MB free
-                            limit = limit.saturating_sub(1024 * 1024 * 200);
-                        }
+            for line in meminfo.lines().flatten() {
+                if line.starts_with("MemAvailable:") {
+                    if let Some(value) = line
+                        .split(' ')
+                        .filter(|x| !x.is_empty())
+                        .nth(1)
+                        .and_then(|x| x.parse::<resource::rlim_t>().ok())
+                    {
+                        limit = value.saturating_mul(1024);
+                        // Keep 200 MB free
+                        limit = limit.saturating_sub(1024 * 1024 * 200);
                     }
                 }
             }

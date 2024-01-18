@@ -63,9 +63,10 @@ impl Handler {
     }
 
     pub fn frame_details<'a, T: image::ImageDecoder<'a>>(&self, decoder: &mut T) -> FrameDetails {
-        let mut details = FrameDetails::default();
-
-        details.iccp = decoder.icc_profile();
+        let mut details = FrameDetails {
+            iccp: decoder.icc_profile(),
+            ..Default::default()
+        };
 
         if let Some((alpha_channel, grayscale, bits)) =
             channel_details(decoder.original_color_type())
