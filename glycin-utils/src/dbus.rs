@@ -3,7 +3,8 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{self, DeserializeDict, Optional, SerializeDict, Type};
 
-use crate::error::ConversionTooLargerError;
+use crate::error::DimensionTooLargerError;
+use crate::{SafeConversion, SafeMath};
 
 #[derive(Deserialize, Serialize, Type, Debug)]
 pub struct InitRequest {
@@ -77,6 +78,12 @@ pub struct Frame {
     pub details: FrameDetails,
 }
 
+impl Frame {
+    pub fn n_bytes(&self) -> Result<usize, DimensionTooLargerError> {
+        self.stride.try_usize()?.smul(self.height.try_usize()?)
+    }
+}
+
 #[derive(DeserializeDict, SerializeDict, Type, Debug, Default, Clone)]
 #[zvariant(signature = "dict")]
 #[non_exhaustive]
@@ -105,12 +112,12 @@ impl Frame {
         height: u32,
         memory_format: MemoryFormat,
         texture: Texture,
-    ) -> Result<Self, ConversionTooLargerError> {
+    ) -> Result<Self, DimensionTooLargerError> {
         let stride = memory_format
             .n_bytes()
             .u32()
             .checked_mul(width)
-            .ok_or(ConversionTooLargerError)?;
+            .ok_or(DimensionTooLargerError)?;
 
         Ok(Self {
             width,

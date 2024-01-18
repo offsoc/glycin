@@ -70,7 +70,10 @@ impl Sandbox {
 
         // Set memory limit for sandbox
         unsafe {
-            command.pre_exec(|| Ok(Self::set_memory_limit()));
+            command.pre_exec(|| {
+                Self::set_memory_limit();
+                Ok(())
+            });
         }
 
         let cmd_debug = format!("{:?}", command);

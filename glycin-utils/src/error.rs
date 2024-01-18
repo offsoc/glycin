@@ -55,8 +55,8 @@ impl From<anyhow::Error> for DecoderError {
     }
 }
 
-impl From<ConversionTooLargerError> for DecoderError {
-    fn from(err: ConversionTooLargerError) -> Self {
+impl From<DimensionTooLargerError> for DecoderError {
+    fn from(err: DimensionTooLargerError) -> Self {
         eprintln!("Decoding error: {err:?}");
         Self::ConversionTooLargerError
     }
@@ -100,12 +100,12 @@ impl<T> GenericContexts<T> for Option<T> {
 }
 
 #[derive(Debug)]
-pub struct ConversionTooLargerError;
+pub struct DimensionTooLargerError;
 
-impl std::fmt::Display for ConversionTooLargerError {
+impl std::fmt::Display for DimensionTooLargerError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         f.write_str(&gettext("Dimension too large for system"))
     }
 }
 
-impl std::error::Error for ConversionTooLargerError {}
+impl std::error::Error for DimensionTooLargerError {}
