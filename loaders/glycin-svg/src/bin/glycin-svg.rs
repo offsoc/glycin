@@ -114,7 +114,7 @@ pub fn render(renderer: &rsvg::CairoRenderer, instr: Instruction) -> Result<Fram
         height.try_u32()?,
         memory_format(),
         texture,
-    );
+    )?;
 
     frame.stride = stride.try_u32()?;
 

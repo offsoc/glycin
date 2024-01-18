@@ -91,7 +91,7 @@ fn worker(format: ImageRsFormat<Reader>, data: Reader, mime_type: String, send: 
                         .unwrap();
                     let texture = memory.into_texture();
 
-                    let mut out_frame = Frame::new(width, height, memory_format, texture);
+                    let mut out_frame = Frame::new(width, height, memory_format, texture).unwrap();
                     out_frame.delay = delay.into();
 
                     // Set frame info for still pictures
@@ -317,7 +317,7 @@ impl<'a, T: std::io::Read + std::io::Seek + 'a> ImageRsFormat<T> {
         }
     }
 
-    fn frame(self) -> Result<Frame, image::ImageError> {
+    fn frame(self) -> Result<Frame, DecoderError> {
         match self.decoder {
             ImageRsDecoder::Bmp(d) => self.handler.frame(d),
             ImageRsDecoder::Dds(d) => self.handler.frame(d),

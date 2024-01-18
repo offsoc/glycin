@@ -3,6 +3,8 @@ use std::time::Duration;
 use serde::{Deserialize, Serialize};
 use zbus::zvariant::{self, DeserializeDict, Optional, SerializeDict, Type};
 
+use crate::error::ConversionTooLargerError;
+
 #[derive(Deserialize, Serialize, Type, Debug)]
 pub struct InitRequest {
     /// Source from which the loader reads the image data
@@ -98,10 +100,19 @@ pub struct FrameDetails {
 }
 
 impl Frame {
-    pub fn new(width: u32, height: u32, memory_format: MemoryFormat, texture: Texture) -> Self {
-        let stride = memory_format.n_bytes().u32() * width;
+    pub fn new(
+        width: u32,
+        height: u32,
+        memory_format: MemoryFormat,
+        texture: Texture,
+    ) -> Result<Self, ConversionTooLargerError> {
+        let stride = memory_format
+            .n_bytes()
+            .u32()
+            .checked_mul(width)
+            .ok_or(ConversionTooLargerError)?;
 
-        Self {
+        Ok(Self {
             width,
             height,
             stride,
@@ -109,7 +120,7 @@ impl Frame {
             texture,
             delay: None.into(),
             details: Default::default(),
-        }
+        })
     }
 }
 

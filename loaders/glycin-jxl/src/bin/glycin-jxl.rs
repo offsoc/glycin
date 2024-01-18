@@ -61,7 +61,7 @@ impl Decoder for ImgDecoder {
             buffer.height().try_u32()?,
             memory_format,
             texture,
-        );
+        )?;
         frame.details.iccp = Some(image.rendered_icc()).into();
 
         Ok(frame)

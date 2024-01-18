@@ -1,5 +1,5 @@
 use super::{Frame, ImageInfo, MemoryFormat, SharedMemory};
-use crate::FrameDetails;
+use crate::{DecoderError, FrameDetails, GenericContexts};
 
 #[derive(Default, Clone, Debug)]
 pub struct Handler {
@@ -45,7 +45,7 @@ impl Handler {
     pub fn frame<'a, T: image::ImageDecoder<'a>>(
         &self,
         mut decoder: T,
-    ) -> Result<Frame, image::ImageError> {
+    ) -> Result<Frame, DecoderError> {
         let details = self.frame_details(&mut decoder);
         let color_type = decoder.color_type();
 
@@ -53,10 +53,10 @@ impl Handler {
         let (width, height) = decoder.dimensions();
 
         let mut memory = SharedMemory::new(decoder.total_bytes());
-        decoder.read_image(&mut memory)?;
+        decoder.read_image(&mut memory).context_failed()?;
         let texture = memory.into_texture();
 
-        let mut frame = Frame::new(width, height, memory_format, texture);
+        let mut frame = Frame::new(width, height, memory_format, texture)?;
         frame.details = details;
 
         Ok(frame)

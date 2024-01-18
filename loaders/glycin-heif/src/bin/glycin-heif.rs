@@ -149,7 +149,7 @@ fn decode(context: HeifContext, mime_type: &str) -> Result<Frame, DecoderError> 
     Cursor::new(plane.data).read_exact(&mut memory).unwrap();
     let texture = memory.into_texture();
 
-    let mut frame = Frame::new(plane.width, plane.height, memory_format, texture);
+    let mut frame = Frame::new(plane.width, plane.height, memory_format, texture)?;
     frame.stride = plane.stride.try_u32()?;
     frame.details.iccp = icc_profile.into();
     if plane.bits_per_pixel > 8 {
