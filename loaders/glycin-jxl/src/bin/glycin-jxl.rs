@@ -22,7 +22,7 @@ impl Decoder for ImgDecoder {
         _mime_type: String,
         _details: InitializationDetails,
     ) -> Result<ImageInfo, DecoderError> {
-        let image = JxlImage::from_reader(stream).unwrap();
+        let image = JxlImage::builder().read(stream).unwrap();
 
         let header = image.image_header();
 
