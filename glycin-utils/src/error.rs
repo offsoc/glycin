@@ -51,7 +51,7 @@ impl std::error::Error for DecoderError {}
 impl From<anyhow::Error> for DecoderError {
     fn from(err: anyhow::Error) -> Self {
         eprintln!("Decoding error: {err:?}");
-        Self::DecodingError(format!("{err}"))
+        Self::DecodingError(format!("{err}: {}", err.root_cause()))
     }
 }
 
