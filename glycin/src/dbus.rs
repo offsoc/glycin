@@ -53,7 +53,7 @@ impl<'a> DecoderProcess<'a> {
                 sandbox.add_ro_bind(base_dir);
             }
         }
-        let mut subprocess = sandbox.spawn().await?;
+        let (mut subprocess, cmd_debug) = sandbox.spawn().await?;
 
         #[cfg(feature = "tokio")]
         let unix_stream = tokio::net::UnixStream::from_std(unix_stream)?;
@@ -75,8 +75,8 @@ impl<'a> DecoderProcess<'a> {
                 Err(glib::Error::from(gio::Cancelled).into())
             },
             return_status = spawn_blocking(move || subprocess.wait()).fuse() => match return_status {
-                Ok(status) => Err(Error::PrematureExit(status)),
-                Err(err) => Err(err.into()),
+                Ok(status) => Err(Error::PrematureExit(status, cmd_debug)),
+                Err(err) => Err(Error::StdIoError(err.into(), cmd_debug)),
             }
         }?;
 
@@ -372,10 +372,10 @@ impl GFileWorker {
 pub enum Error {
     RemoteError(RemoteError),
     GLibError(glib::Error),
-    StdIoError(Arc<std::io::Error>),
+    StdIoError(Arc<std::io::Error>, String),
     InternalCommunicationCanceled,
     UnknownImageFormat(String),
-    PrematureExit(ExitStatus),
+    PrematureExit(ExitStatus, String),
     ConversionTooLargerError,
     SpawnError(String, Arc<std::io::Error>),
     TextureTooSmall { texture_size: usize, frame: String },
@@ -406,7 +406,7 @@ impl From<glib::Error> for Error {
 
 impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Self {
-        Self::StdIoError(Arc::new(err))
+        Self::StdIoError(Arc::new(err), String::new())
     }
 }
 
@@ -433,15 +433,19 @@ impl std::fmt::Display for Error {
         match self {
             Self::RemoteError(err) => write!(f, "{err}"),
             Self::GLibError(err) => write!(f, "{err}"),
-            Self::StdIoError(err) => write!(f, "{err}"),
+            Self::StdIoError(err, info) => write!(f, "{err} {info}"),
             Self::InternalCommunicationCanceled => {
                 write!(f, "Internal communication was unexpectedly canceled")
             }
             Self::UnknownImageFormat(mime_type) => {
                 write!(f, "Unknown image format: {mime_type}")
             }
-            Self::PrematureExit(status) => {
-                write!(f, "Loader process exited early: {status}")
+            Self::PrematureExit(status, command) => {
+                write!(
+                    f,
+                    "Loader process exited early with status '{}'. {command}",
+                    status.code().unwrap_or_default()
+                )
             }
             err @ Self::ConversionTooLargerError => err.fmt(f),
             Self::SpawnError(cmd, err) => write!(f, "Could not spawn `{cmd}`: {err}"),

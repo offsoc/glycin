@@ -34,7 +34,7 @@ impl Sandbox {
         self.ro_bind_extra.push(path);
     }
 
-    pub async fn spawn(self) -> crate::Result<Child> {
+    pub async fn spawn(self) -> crate::Result<(Child, String)> {
         // Determine command line args
         let (bin, args, final_arg) = match self.sandbox_mechanism {
             SandboxMechanism::Bwrap => {
@@ -79,9 +79,9 @@ impl Sandbox {
         let cmd_debug = format!("{:?}", command);
         let subprocess = command
             .spawn()
-            .map_err(|err| Error::SpawnError(cmd_debug, Arc::new(err)))?;
+            .map_err(|err| Error::SpawnError(cmd_debug.clone(), Arc::new(err)))?;
 
-        Ok(subprocess)
+        Ok((subprocess, cmd_debug))
     }
 
     async fn bwrap_args(&self) -> crate::Result<Vec<PathBuf>> {
