@@ -115,7 +115,7 @@ impl From<image::ColorType> for MemoryFormat {
     }
 }
 
-fn channel_details(color_type: image::ExtendedColorType) -> Option<(bool, bool, u8)> {
+pub fn channel_details(color_type: image::ExtendedColorType) -> Option<(bool, bool, u8)> {
     Some(match color_type {
         image::ExtendedColorType::A8 => (true, false, 8),
         image::ExtendedColorType::L1 => (false, true, 1),
