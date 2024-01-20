@@ -12,9 +12,11 @@ fn main() {
     Communication::spawn(ImgDecoder::default());
 }
 
+type InitData = Option<(Vec<u8>, Option<Vec<u8>>)>;
+
 #[derive(Default)]
 pub struct ImgDecoder {
-    pub decoder: Mutex<Option<Vec<u8>>>,
+    pub decoder: Mutex<InitData>,
 }
 
 impl Decoder for ImgDecoder {
@@ -26,18 +28,20 @@ impl Decoder for ImgDecoder {
     ) -> Result<ImageInfo, DecoderError> {
         let mut data = Vec::new();
         stream.read_to_end(&mut data).context_failed()?;
-        let info = basic_info(&data).context_failed()?;
+        let (info, iccp) = basic_info(&data);
+
+        let info = info.context_failed()?;
 
         let mut image_info = ImageInfo::new(info.xsize, info.ysize);
         image_info.details.format_name = Some(String::from("JPEG XL"));
 
-        *self.decoder.lock().unwrap() = Some(data);
+        *self.decoder.lock().unwrap() = Some((data, iccp));
 
         Ok(image_info)
     }
 
     fn decode_frame(&self, _frame_request: FrameRequest) -> Result<Frame, DecoderError> {
-        let Some(data) = std::mem::take(&mut *self.decoder.lock().unwrap()) else {
+        let Some((data, iccp)) = std::mem::take(&mut *self.decoder.lock().unwrap()) else {
             return Err(DecoderError::InternalDecoderError);
         };
 
@@ -66,6 +70,8 @@ impl Decoder for ImgDecoder {
 
         let mut frame = Frame::new(width, height, memory_format, texture).context_failed()?;
 
+        frame.details.iccp = iccp;
+
         if bits != 8 {
             frame.details.bit_depth = Some(bits);
         }
@@ -82,24 +88,67 @@ impl Decoder for ImgDecoder {
     }
 }
 
-fn basic_info(data: &[u8]) -> Option<JxlBasicInfo> {
+fn basic_info(data: &[u8]) -> (Option<JxlBasicInfo>, Option<Vec<u8>>) {
     unsafe {
         let decoder = JxlDecoderCreate(std::ptr::null());
 
-        JxlDecoderSubscribeEvents(decoder, JxlDecoderStatus::BasicInfo as i32);
+        JxlDecoderSubscribeEvents(
+            decoder,
+            JxlDecoderStatus::BasicInfo as i32 | JxlDecoderStatus::ColorEncoding as i32,
+        );
         JxlDecoderSetInput(decoder, data.as_ptr(), data.len());
         JxlDecoderCloseInput(decoder);
 
         let mut basic_info = None;
+        let mut icc_profile = None;
 
-        let status = JxlDecoderProcessInput(decoder);
-        if status == JxlDecoderStatus::BasicInfo {
-            let mut info = MaybeUninit::uninit();
-            if JxlDecoderGetBasicInfo(decoder, info.as_mut_ptr()) == JxlDecoderStatus::Success {
-                basic_info = Some(info.assume_init());
+        loop {
+            let status = JxlDecoderProcessInput(decoder);
+            match status {
+                JxlDecoderStatus::BasicInfo => {
+                    let mut info = MaybeUninit::uninit();
+                    if JxlDecoderGetBasicInfo(decoder, info.as_mut_ptr())
+                        == JxlDecoderStatus::Success
+                    {
+                        basic_info = Some(info.assume_init());
+                    }
+                }
+                JxlDecoderStatus::ColorEncoding => {
+                    let mut size = 0;
+                    let mut iccp = Vec::new();
+
+                    if JxlDecoderGetICCProfileSize(
+                        decoder,
+                        std::ptr::null(),
+                        JxlColorProfileTarget::Data,
+                        &mut size,
+                    ) != JxlDecoderStatus::Success
+                    {
+                        break;
+                    }
+
+                    iccp.resize(size, 0);
+
+                    if JxlDecoderGetColorAsICCProfile(
+                        decoder,
+                        std::ptr::null(),
+                        JxlColorProfileTarget::Data,
+                        iccp.as_mut_ptr(),
+                        size,
+                    ) == JxlDecoderStatus::Success
+                    {
+                        icc_profile = Some(iccp);
+                    }
+                }
+                JxlDecoderStatus::Success => {
+                    break;
+                }
+                status => {
+                    eprintln!("Unexpected metadata status: {status:?}")
+                }
             }
         }
 
-        basic_info
+        (basic_info, icc_profile)
     }
 }
