@@ -28,12 +28,13 @@ impl Decoder for ImgDecoder {
     ) -> Result<ImageInfo, DecoderError> {
         let mut data = Vec::new();
         stream.read_to_end(&mut data).context_failed()?;
-        let (info, iccp) = basic_info(&data);
+        let (info, iccp, exif) = basic_info(&data);
 
         let info = info.context_failed()?;
 
         let mut image_info = ImageInfo::new(info.xsize, info.ysize);
         image_info.details.format_name = Some(String::from("JPEG XL"));
+        image_info.details.exif = exif;
 
         *self.decoder.lock().unwrap() = Some((data, iccp));
 
@@ -88,19 +89,26 @@ impl Decoder for ImgDecoder {
     }
 }
 
-fn basic_info(data: &[u8]) -> (Option<JxlBasicInfo>, Option<Vec<u8>>) {
+fn basic_info(data: &[u8]) -> (Option<JxlBasicInfo>, Option<Vec<u8>>, Option<Vec<u8>>) {
     unsafe {
         let decoder = JxlDecoderCreate(std::ptr::null());
 
         JxlDecoderSubscribeEvents(
             decoder,
-            JxlDecoderStatus::BasicInfo as i32 | JxlDecoderStatus::ColorEncoding as i32,
+            JxlDecoderStatus::BasicInfo as i32
+                | JxlDecoderStatus::ColorEncoding as i32
+                | JxlDecoderStatus::Box as i32,
         );
+        JxlDecoderSetDecompressBoxes(decoder, JxlBool::True);
         JxlDecoderSetInput(decoder, data.as_ptr(), data.len());
         JxlDecoderCloseInput(decoder);
 
         let mut basic_info = None;
         let mut icc_profile = None;
+        let mut exif = None;
+
+        let mut exif_buf = Vec::new();
+        let mut buf = Vec::new();
 
         loop {
             let status = JxlDecoderProcessInput(decoder);
@@ -112,6 +120,23 @@ fn basic_info(data: &[u8]) -> (Option<JxlBasicInfo>, Option<Vec<u8>>) {
                     {
                         basic_info = Some(info.assume_init());
                     }
+                }
+                JxlDecoderStatus::Box => {
+                    //if (exif.is_none()) {
+                    let mut type_ = Default::default();
+                    JxlDecoderGetBoxType(decoder, &mut type_, JxlBool::True);
+
+                    if &type_.map(|x| x as u8) == b"Exif" {
+                        buf.resize(65536, 0);
+                        JxlDecoderSetBoxBuffer(decoder, buf.as_mut_ptr(), buf.len());
+                    }
+                }
+                JxlDecoderStatus::BoxNeedMoreOutput => {
+                    let remaining = JxlDecoderReleaseBoxBuffer(decoder);
+                    buf.truncate(buf.len() - remaining);
+                    exif_buf.push(buf.clone());
+
+                    JxlDecoderSetBoxBuffer(decoder, buf.as_mut_ptr(), buf.len());
                 }
                 JxlDecoderStatus::ColorEncoding => {
                     let mut size = 0;
@@ -141,6 +166,24 @@ fn basic_info(data: &[u8]) -> (Option<JxlBasicInfo>, Option<Vec<u8>>) {
                     }
                 }
                 JxlDecoderStatus::Success => {
+                    let remaining = JxlDecoderReleaseBoxBuffer(decoder);
+
+                    if !buf.is_empty() {
+                        exif_buf.push(buf.clone());
+                    }
+
+                    if remaining > 0 {
+                        if let Some(last) = exif_buf.last_mut() {
+                            last.resize(last.len() - remaining, 0);
+                        }
+                    }
+
+                    let exif_data = exif_buf.concat();
+                    if exif_data.len() > 4 {
+                        let (_, data) = exif_data.split_at(4);
+                        exif = Some(data.to_vec());
+                    }
+
                     break;
                 }
                 status => {
@@ -149,6 +192,6 @@ fn basic_info(data: &[u8]) -> (Option<JxlBasicInfo>, Option<Vec<u8>>) {
             }
         }
 
-        (basic_info, icc_profile)
+        (basic_info, icc_profile, exif)
     }
 }

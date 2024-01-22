@@ -64,7 +64,7 @@ The following features are supported by the glycin loaders provided in the [load
 | HEIC      | heif     | ✔   | ✔    | ✔    | ✘   | ✘         | libheif-rs + libheif (C++) |
 | ICO       | image-rs | —   | —    | —    | —   | —         | image-rs                   |
 | JPEG      | image-rs | ✔   | —    | ✔    | ✘   | —         | image-rs                   |
-| JPEG XL   | jxl      | ✔   | ✘    | ✘    | ✘   | ✘         | jxl-oxide                  |
+| JPEG XL   | jxl      | ✔   | ✘    | ✔    | ✘   | ✘         | jxl-oxide                  |
 | OpenEXR   | image-rs | —   | —    | —    | —   | —         | image-rs                   |
 | PNG       | image-rs | ✔   | ✘    | ✔    | ✘   | ✔         | image-rs                   |
 | PNM       | image-rs | —   | —    | —    | —   | —         | image-rs                   |
