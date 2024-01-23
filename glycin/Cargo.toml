@@ -18,6 +18,7 @@ tokio = ["dep:tokio", "zbus/tokio"]
 anyhow = { version = "1.0.71", features = ["backtrace"] }
 async-fs = "2.1.0"
 async-global-executor = "2.4.1"
+async-lock = "3.3.0"
 async-process = "2.0.1"
 futures-channel = "0.3.30"
 futures-util = "0.3.30"

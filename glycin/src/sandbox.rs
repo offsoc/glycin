@@ -5,13 +5,13 @@ use std::os::unix::net::UnixStream;
 use std::os::unix::process::CommandExt;
 use std::path::PathBuf;
 use std::process::{Child, Command};
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 
 use nix::sys::resource;
 
 use crate::{Error, SandboxMechanism};
 
-static SYSTEM_SETUP: OnceLock<io::Result<SystemSetup>> = OnceLock::new();
+static SYSTEM_SETUP: async_lock::OnceCell<io::Result<SystemSetup>> = async_lock::OnceCell::new();
 
 pub struct Sandbox {
     sandbox_mechanism: SandboxMechanism,
@@ -181,13 +181,7 @@ struct SystemSetup {
 
 impl SystemSetup {
     async fn cached() -> &'static io::Result<SystemSetup> {
-        if let Some(system) = SYSTEM_SETUP.get() {
-            system
-        } else {
-            let system = Self::new().await;
-            SYSTEM_SETUP.set(system).unwrap();
-            SYSTEM_SETUP.get().unwrap()
-        }
+        SYSTEM_SETUP.get_or_init(|| Self::new()).await
     }
 
     async fn new() -> io::Result<SystemSetup> {

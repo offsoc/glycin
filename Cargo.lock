@@ -1230,6 +1230,7 @@ dependencies = [
  "anyhow",
  "async-fs 2.1.0",
  "async-global-executor",
+ "async-lock 3.3.0",
  "async-process 2.0.1",
  "futures-channel",
  "futures-util",
