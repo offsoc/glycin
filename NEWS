@@ -1,3 +1,11 @@
+## 1.0.beta
+
+- glycin/utils: Only use checked math operations
+- glycin: Attach command line to error messages
+- jxl: Support Exif
+- jxl: Use libjxl instead of jxl-oxide for performance reasons
+- utils: Add root cause info to decoding errors
+
 ## 1.0.alpha
 
 - Replace async-std with other crates
