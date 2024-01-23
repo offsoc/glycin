@@ -64,6 +64,7 @@ impl From<DimensionTooLargerError> for DecoderError {
 
 pub trait GenericContexts<T> {
     fn context_failed(self) -> anyhow::Result<T>;
+    fn context_failed_detail(self, detail: impl ToString) -> anyhow::Result<T>;
     fn context_internal(self) -> Result<T, DecoderError>;
     fn context_unsupported(self, msg: String) -> Result<T, DecoderError>;
 }
@@ -74,6 +75,16 @@ where
 {
     fn context_failed(self) -> anyhow::Result<T> {
         self.with_context(|| gettext("Failed to decode image"))
+    }
+
+    fn context_failed_detail(self, detail: impl ToString) -> anyhow::Result<T> {
+        self.with_context(|| {
+            format!(
+                "{}: {}",
+                gettext("Failed to decode image:"),
+                detail.to_string()
+            )
+        })
     }
 
     fn context_internal(self) -> Result<T, DecoderError> {
@@ -88,6 +99,16 @@ where
 impl<T> GenericContexts<T> for Option<T> {
     fn context_failed(self) -> anyhow::Result<T> {
         self.with_context(|| gettext("Failed to decode image"))
+    }
+
+    fn context_failed_detail(self, detail: impl ToString) -> anyhow::Result<T> {
+        self.with_context(|| {
+            format!(
+                "{}: {}",
+                gettext("Failed to decode image:"),
+                detail.to_string()
+            )
+        })
     }
 
     fn context_internal(self) -> Result<T, DecoderError> {

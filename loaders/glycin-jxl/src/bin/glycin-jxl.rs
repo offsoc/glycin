@@ -26,51 +26,59 @@ impl Decoder for ImgDecoder {
         _mime_type: String,
         _details: InitializationDetails,
     ) -> Result<ImageInfo, DecoderError> {
+        eprintln!("Begin JXL decoder X");
+        dbg!("-");
         let mut data = Vec::new();
-        stream.read_to_end(&mut data).context_failed()?;
+        stream
+            .read_to_end(&mut data)
+            .context_failed_detail("Unable to read stream to end")?;
+        dbg!("-");
         let (info, iccp, exif) = basic_info(&data);
 
-        let info = info.context_failed()?;
-
+        dbg!("-");
+        let info = info.context_failed_detail("Unable to obtain basic information")?;
+        dbg!("-");
         let mut image_info = ImageInfo::new(info.xsize, info.ysize);
         image_info.details.format_name = Some(String::from("JPEG XL"));
         image_info.details.exif = exif;
-
+        dbg!("-");
         *self.decoder.lock().unwrap() = Some((data, iccp));
-
+        dbg!("-");
         Ok(image_info)
     }
 
     fn decode_frame(&self, _frame_request: FrameRequest) -> Result<Frame, DecoderError> {
+        dbg!("-");
         let Some((data, iccp)) = std::mem::take(&mut *self.decoder.lock().unwrap()) else {
             return Err(DecoderError::InternalDecoderError);
         };
-
+        dbg!("-");
         let decoder = jpegxl_rs::decode::decoder_builder()
             .build()
-            .context_failed()?;
-
+            .context_failed_detail("Failed to build decoder")?;
+        dbg!("-");
         let image = decoder
             .decode_to_image(&data)
-            .context_failed()?
-            .context_failed()?;
-
+            .context_failed_detail("Failed to decode to dynamic image")?
+            .context_failed_detail("No dynamic image")?;
+        dbg!("-");
         let memory_format = MemoryFormat::from(image.color());
         let (alpha_channel, grayscale, bits) =
             image_rs::channel_details(image.color().into()).context_internal()?;
         let width = image.width();
         let height = image.height();
-
+        dbg!("-");
         let bytes = image.into_bytes();
         let mut memory = SharedMemory::new(bytes.len() as u64);
-
+        dbg!("-");
         Cursor::new(memory.as_mut())
             .write_all(&bytes)
             .context_internal()?;
         let texture = memory.into_texture();
 
-        let mut frame = Frame::new(width, height, memory_format, texture).context_failed()?;
-
+        let mut frame = Frame::new(width, height, memory_format, texture)
+            .context_failed_detail("Failed to create frame")?;
+        dbg!("-");
         frame.details.iccp = iccp;
 
         if bits != 8 {
@@ -91,17 +99,17 @@ impl Decoder for ImgDecoder {
 
 fn basic_info(data: &[u8]) -> (Option<JxlBasicInfo>, Option<Vec<u8>>, Option<Vec<u8>>) {
     unsafe {
-        let decoder = JxlDecoderCreate(std::ptr::null());
+        let decoder = dbg!(JxlDecoderCreate(std::ptr::null()));
 
-        JxlDecoderSubscribeEvents(
+        dbg!(JxlDecoderSubscribeEvents(
             decoder,
             JxlDecoderStatus::BasicInfo as i32
                 | JxlDecoderStatus::ColorEncoding as i32
                 | JxlDecoderStatus::Box as i32,
-        );
-        JxlDecoderSetDecompressBoxes(decoder, JxlBool::True);
-        JxlDecoderSetInput(decoder, data.as_ptr(), data.len());
-        JxlDecoderCloseInput(decoder);
+        ));
+        dbg!(JxlDecoderSetDecompressBoxes(decoder, JxlBool::True));
+        dbg!(JxlDecoderSetInput(decoder, data.as_ptr(), data.len()));
+        dbg!(JxlDecoderCloseInput(decoder));
 
         let mut basic_info = None;
         let mut icc_profile = None;
@@ -111,7 +119,7 @@ fn basic_info(data: &[u8]) -> (Option<JxlBasicInfo>, Option<Vec<u8>>, Option<Vec
         let mut buf = Vec::new();
 
         loop {
-            let status = JxlDecoderProcessInput(decoder);
+            let status = dbg!(JxlDecoderProcessInput(decoder));
             match status {
                 JxlDecoderStatus::BasicInfo => {
                     let mut info = MaybeUninit::uninit();
@@ -122,7 +130,6 @@ fn basic_info(data: &[u8]) -> (Option<JxlBasicInfo>, Option<Vec<u8>>, Option<Vec
                     }
                 }
                 JxlDecoderStatus::Box => {
-                    //if (exif.is_none()) {
                     let mut type_ = Default::default();
                     JxlDecoderGetBoxType(decoder, &mut type_, JxlBool::True);
 
@@ -142,28 +149,31 @@ fn basic_info(data: &[u8]) -> (Option<JxlBasicInfo>, Option<Vec<u8>>, Option<Vec
                     let mut size = 0;
                     let mut iccp = Vec::new();
 
-                    if JxlDecoderGetICCProfileSize(
+                    dbg!("before JxlDecoderGetICCProfileSize");
+
+                    if dbg!(JxlDecoderGetICCProfileSize(
                         decoder,
                         std::ptr::null(),
                         JxlColorProfileTarget::Data,
                         &mut size,
-                    ) != JxlDecoderStatus::Success
+                    )) != JxlDecoderStatus::Success
                     {
                         break;
                     }
 
                     iccp.resize(size, 0);
 
-                    if JxlDecoderGetColorAsICCProfile(
+                    if dbg!(JxlDecoderGetColorAsICCProfile(
                         decoder,
                         std::ptr::null(),
                         JxlColorProfileTarget::Data,
                         iccp.as_mut_ptr(),
                         size,
-                    ) == JxlDecoderStatus::Success
+                    )) == JxlDecoderStatus::Success
                     {
                         icc_profile = Some(iccp);
                     }
+                    dbg!("end color");
                 }
                 JxlDecoderStatus::Success => {
                     let remaining = JxlDecoderReleaseBoxBuffer(decoder);
@@ -191,6 +201,8 @@ fn basic_info(data: &[u8]) -> (Option<JxlBasicInfo>, Option<Vec<u8>>, Option<Vec
                 }
             }
         }
+
+        dbg!("END");
 
         (basic_info, icc_profile, exif)
     }
