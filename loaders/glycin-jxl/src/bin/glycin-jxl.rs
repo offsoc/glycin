@@ -91,6 +91,8 @@ impl Decoder for ImgDecoder {
 
 fn basic_info(data: &[u8]) -> (Option<JxlBasicInfo>, Option<Vec<u8>>, Option<Vec<u8>>) {
     unsafe {
+        let v09 = JxlDecoderVersion() >= 9000;
+
         let decoder = JxlDecoderCreate(std::ptr::null());
 
         JxlDecoderSubscribeEvents(
@@ -142,27 +144,50 @@ fn basic_info(data: &[u8]) -> (Option<JxlBasicInfo>, Option<Vec<u8>>, Option<Vec
                     let mut size = 0;
                     let mut iccp = Vec::new();
 
-                    if JxlDecoderGetICCProfileSize(
-                        decoder,
-                        std::ptr::null(),
-                        JxlColorProfileTarget::Data,
-                        &mut size,
-                    ) != JxlDecoderStatus::Success
-                    {
-                        break;
+                    if v09 {
+                        if v09::JxlDecoderGetICCProfileSize(
+                            decoder,
+                            JxlColorProfileTarget::Data,
+                            &mut size,
+                        ) != JxlDecoderStatus::Success
+                        {
+                            break;
+                        }
+                    } else {
+                        if JxlDecoderGetICCProfileSize(
+                            decoder,
+                            std::ptr::null(),
+                            JxlColorProfileTarget::Data,
+                            &mut size,
+                        ) != JxlDecoderStatus::Success
+                        {
+                            break;
+                        }
                     }
 
                     iccp.resize(size, 0);
 
-                    if JxlDecoderGetColorAsICCProfile(
-                        decoder,
-                        std::ptr::null(),
-                        JxlColorProfileTarget::Data,
-                        iccp.as_mut_ptr(),
-                        size,
-                    ) == JxlDecoderStatus::Success
-                    {
-                        icc_profile = Some(iccp);
+                    if v09 {
+                        if v09::JxlDecoderGetColorAsICCProfile(
+                            decoder,
+                            JxlColorProfileTarget::Data,
+                            iccp.as_mut_ptr(),
+                            size,
+                        ) == JxlDecoderStatus::Success
+                        {
+                            icc_profile = Some(iccp);
+                        }
+                    } else {
+                        if JxlDecoderGetColorAsICCProfile(
+                            decoder,
+                            std::ptr::null(),
+                            JxlColorProfileTarget::Data,
+                            iccp.as_mut_ptr(),
+                            size,
+                        ) == JxlDecoderStatus::Success
+                        {
+                            icc_profile = Some(iccp);
+                        }
                     }
                 }
                 JxlDecoderStatus::Success => {
@@ -193,5 +218,24 @@ fn basic_info(data: &[u8]) -> (Option<JxlBasicInfo>, Option<Vec<u8>>, Option<Vec
         }
 
         (basic_info, icc_profile, exif)
+    }
+}
+
+mod v09 {
+    use super::*;
+
+    extern "C" {
+        pub fn JxlDecoderGetICCProfileSize(
+            dec: *const JxlDecoder,
+            target: JxlColorProfileTarget,
+            size: *mut usize,
+        ) -> JxlDecoderStatus;
+
+        pub fn JxlDecoderGetColorAsICCProfile(
+            dec: *const JxlDecoder,
+            target: JxlColorProfileTarget,
+            icc_profile: *mut u8,
+            size: usize,
+        ) -> JxlDecoderStatus;
     }
 }
