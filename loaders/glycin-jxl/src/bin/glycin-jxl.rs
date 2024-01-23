@@ -35,6 +35,7 @@ impl Decoder for ImgDecoder {
         let mut image_info = ImageInfo::new(info.xsize, info.ysize);
         image_info.details.format_name = Some(String::from("JPEG XL"));
         image_info.details.exif = exif;
+        image_info.details.transformations_applied = true;
 
         *self.decoder.lock().unwrap() = Some((data, iccp));
 
