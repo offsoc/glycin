@@ -10,7 +10,10 @@ use futures_channel::oneshot;
 use futures_util::{future, FutureExt};
 use gdk::prelude::*;
 use gio::glib;
-use glycin_utils::*;
+use glycin_utils::{
+    DimensionTooLargerError, Frame, FrameRequest, ImageInfo, InitRequest, InitializationDetails,
+    MemoryFormat, RemoteError, SafeConversion, SafeMath, Texture,
+};
 use nix::sys::signal;
 use zbus::zvariant;
 
@@ -202,17 +205,21 @@ impl<'a> DecoderProcess<'a> {
             memfd::FileSeal::SealGrow,
             memfd::FileSeal::SealWrite,
             memfd::FileSeal::SealSeal,
-        ])
-        .unwrap();
+        ])?;
 
         let bytes: glib::Bytes = unsafe {
-            let mmap = glib::ffi::g_mapped_file_new_from_fd(
-                raw_fd,
-                glib::ffi::GFALSE,
-                std::ptr::null_mut(),
-            );
+            let mut error = std::ptr::null_mut();
+
+            let mmap = glib::ffi::g_mapped_file_new_from_fd(raw_fd, glib::ffi::GFALSE, &mut error);
+
+            if !error.is_null() {
+                let err: glib::Error = glib::translate::from_glib_full(error);
+                return Err(err.into());
+            };
+
             let bytes = glib::translate::from_glib_full(glib::ffi::g_mapped_file_get_bytes(mmap));
             glib::ffi::g_mapped_file_unref(mmap);
+
             bytes
         };
 
@@ -380,6 +387,7 @@ pub enum Error {
     SpawnError(String, Arc<std::io::Error>),
     TextureTooSmall { texture_size: usize, frame: String },
     StrideTooSmall(String),
+    MemFd(Arc<memfd::Error>),
 }
 
 impl Error {
@@ -407,6 +415,12 @@ impl From<glib::Error> for Error {
 impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Self {
         Self::StdIoError(Arc::new(err), String::new())
+    }
+}
+
+impl From<memfd::Error> for Error {
+    fn from(err: memfd::Error) -> Self {
+        Self::MemFd(Arc::new(err))
     }
 }
 
@@ -457,6 +471,7 @@ impl std::fmt::Display for Error {
                 "Texture is only {texture_size} but was announced differently: {frame}"
             ),
             Self::StrideTooSmall(frame) => write!(f, "Stride is smaller than possible: {frame}"),
+            Self::MemFd(err) => write!(f, "Memfd: {err}"),
         }
     }
 }
