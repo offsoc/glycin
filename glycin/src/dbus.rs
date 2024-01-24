@@ -110,6 +110,8 @@ impl<'a> DecoderProcess<'a> {
         gfile_worker.write_to(writer)?;
 
         let fd = unsafe { zvariant::OwnedFd::from_raw_fd(remote_reader.as_raw_fd()) };
+        std::mem::forget(remote_reader);
+
         let mime_type = self.mime_type.clone();
 
         let mut details = InitializationDetails::default();
@@ -141,11 +143,11 @@ impl<'a> DecoderProcess<'a> {
         let Texture::MemFd(fd) = &frame.texture;
         let raw_fd = fd.as_raw_fd();
         let borrowed_fd = unsafe { std::os::fd::BorrowedFd::borrow_raw(raw_fd) };
-        let mut mmap = unsafe { memmap::MmapMut::map_mut(raw_fd) }?;
+        let mut original_mmap = unsafe { memmap::MmapMut::map_mut(raw_fd) }?;
 
-        if mmap.len() < frame.n_bytes()? {
+        if original_mmap.len() < frame.n_bytes()? {
             return Err(Error::TextureTooSmall {
-                texture_size: mmap.len(),
+                texture_size: original_mmap.len(),
                 frame: format!("{:?}", frame),
             });
         }
@@ -156,7 +158,7 @@ impl<'a> DecoderProcess<'a> {
 
         if let Some(icc_profile) = frame.details.iccp.clone() {
             // Align stride with pixel size if necessary
-            let mmap = if frame.stride.srem(frame.memory_format.n_bytes().u32())? != 0 {
+            let icc_mmap = if frame.stride.srem(frame.memory_format.n_bytes().u32())? != 0 {
                 let width = frame
                     .width
                     .try_usize()?
@@ -164,14 +166,16 @@ impl<'a> DecoderProcess<'a> {
                 let stride = frame.stride.try_usize()?;
                 let mut source = vec![0; width];
                 for row in 1..frame.height.try_usize()? {
-                    source
-                        .copy_from_slice(&mmap[row.smul(stride)?..row.smul(stride)?.sadd(width)?]);
-                    mmap[row.smul(width)?..row.sadd(1)?.smul(width)?].copy_from_slice(&source);
+                    source.copy_from_slice(
+                        &original_mmap[row.smul(stride)?..row.smul(stride)?.sadd(width)?],
+                    );
+                    original_mmap[row.smul(width)?..row.sadd(1)?.smul(width)?]
+                        .copy_from_slice(&source);
                 }
                 frame.stride = width.try_u32()?;
 
                 // This mmap would have the wrong size after ftruncate
-                drop(mmap);
+                drop(original_mmap);
 
                 nix::unistd::ftruncate(
                     borrowed_fd,
@@ -182,12 +186,12 @@ impl<'a> DecoderProcess<'a> {
                 // Need a new mmap with correct size
                 unsafe { memmap::MmapMut::map_mut(raw_fd) }?
             } else {
-                mmap
+                original_mmap
             };
 
             let memory_format = frame.memory_format;
             let icc_result: Result<(), anyhow::Error> = spawn_blocking(move || {
-                crate::icc::apply_transformation(&icc_profile, memory_format, mmap)
+                crate::icc::apply_transformation(&icc_profile, memory_format, icc_mmap)
             })
             .await;
 
@@ -195,7 +199,7 @@ impl<'a> DecoderProcess<'a> {
                 eprintln!("Failed to apply ICC profile: {err}");
             }
         } else {
-            drop(mmap);
+            drop(original_mmap);
         }
 
         let mfd = memfd::Memfd::try_from_fd(raw_fd).unwrap();
@@ -210,15 +214,18 @@ impl<'a> DecoderProcess<'a> {
         let bytes: glib::Bytes = unsafe {
             let mut error = std::ptr::null_mut();
 
-            let mmap = glib::ffi::g_mapped_file_new_from_fd(raw_fd, glib::ffi::GFALSE, &mut error);
+            let mapped_file =
+                glib::ffi::g_mapped_file_new_from_fd(raw_fd, glib::ffi::GFALSE, &mut error);
 
             if !error.is_null() {
                 let err: glib::Error = glib::translate::from_glib_full(error);
                 return Err(err.into());
             };
 
-            let bytes = glib::translate::from_glib_full(glib::ffi::g_mapped_file_get_bytes(mmap));
-            glib::ffi::g_mapped_file_unref(mmap);
+            let bytes =
+                glib::translate::from_glib_full(glib::ffi::g_mapped_file_get_bytes(mapped_file));
+
+            glib::ffi::g_mapped_file_unref(mapped_file);
 
             bytes
         };
