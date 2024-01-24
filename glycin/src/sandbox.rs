@@ -181,7 +181,7 @@ struct SystemSetup {
 
 impl SystemSetup {
     async fn cached() -> &'static io::Result<SystemSetup> {
-        SYSTEM_SETUP.get_or_init(|| Self::new()).await
+        SYSTEM_SETUP.get_or_init(Self::new).await
     }
 
     async fn new() -> io::Result<SystemSetup> {
