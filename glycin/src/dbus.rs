@@ -203,13 +203,22 @@ impl<'a> DecoderProcess<'a> {
         }
 
         let mfd = memfd::Memfd::try_from_fd(raw_fd).unwrap();
-        // 🦭
-        mfd.add_seals(&[
-            memfd::FileSeal::SealShrink,
-            memfd::FileSeal::SealGrow,
-            memfd::FileSeal::SealWrite,
-            memfd::FileSeal::SealSeal,
-        ])?;
+        // In rare circumstances the sealing returns a ResourceBusy
+        for i in 0.. {
+            // 🦭
+            let seal = mfd.add_seals(&[
+                memfd::FileSeal::SealShrink,
+                memfd::FileSeal::SealGrow,
+                memfd::FileSeal::SealWrite,
+                memfd::FileSeal::SealSeal,
+            ]);
+
+            match seal {
+                Ok(_) => break,
+                Err(err) if i > 10000 => return Err(err.into()),
+                Err(_) => {}
+            }
+        }
 
         let bytes: glib::Bytes = unsafe {
             let mut error = std::ptr::null_mut();
