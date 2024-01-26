@@ -1,6 +1,6 @@
 //! Internal DBus API
 
-use std::os::fd::{AsRawFd, FromRawFd};
+use std::os::fd::{AsRawFd, FromRawFd, IntoRawFd};
 use std::os::unix::net::UnixStream;
 use std::process::ExitStatus;
 use std::sync::Arc;
@@ -109,8 +109,7 @@ impl<'a> DecoderProcess<'a> {
 
         gfile_worker.write_to(writer)?;
 
-        let fd = unsafe { zvariant::OwnedFd::from_raw_fd(remote_reader.as_raw_fd()) };
-        std::mem::forget(remote_reader);
+        let fd = unsafe { zvariant::OwnedFd::from_raw_fd(remote_reader.into_raw_fd()) };
 
         let mime_type = self.mime_type.clone();
 

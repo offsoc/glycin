@@ -44,13 +44,13 @@ impl SandboxMechanism {
 
 /// Image request builder
 #[derive(Debug)]
-pub struct ImageRequest {
+pub struct Loader {
     file: gio::File,
     cancellable: gio::Cancellable,
     sandbox_mechanism: Option<SandboxMechanism>,
 }
 
-impl ImageRequest {
+impl Loader {
     pub fn new(file: gio::File) -> Self {
         Self {
             file,
@@ -132,7 +132,7 @@ impl ImageRequest {
 /// Image handle containing metadata and allowing frame requests
 #[derive(Debug)]
 pub struct Image<'a> {
-    request: ImageRequest,
+    request: Loader,
     process: DecoderProcess<'a>,
     info: ImageInfo,
     mime_type: MimeType,
@@ -143,14 +143,6 @@ impl<'a> Image<'a> {
         self.process
             .decode_frame(glycin_utils::FrameRequest::default())
             .await
-            .map_err(Into::into)
-    }
-
-    pub async fn texture(self) -> Result<gdk::Texture> {
-        self.process
-            .decode_frame(glycin_utils::FrameRequest::default())
-            .await
-            .map(|x| x.texture)
             .map_err(Into::into)
     }
 
@@ -173,12 +165,12 @@ impl<'a> Image<'a> {
         self.info().details.format_name.as_ref().cloned()
     }
 
-    pub fn request(&self) -> &ImageRequest {
+    pub fn request(&self) -> &Loader {
         &self.request
     }
 }
 
-impl Drop for ImageRequest {
+impl Drop for Loader {
     fn drop(&mut self) {
         self.cancellable.cancel();
     }

@@ -13,10 +13,10 @@
 //! # use glycin::*;
 //! # async_global_executor::block_on(async {
 //! let file = gio::File::for_path("image.jpg");
-//! let image = ImageRequest::new(file).request().await?;
+//! let image = Loader::new(file).request().await?;
 //!
 //! let height = image.info().height;
-//! let frame = image.next_frame().await?;
+//! let texture = image.next_frame().await?.texture;
 //! # Ok::<(), Error>(()) });
 //! ```
 //!

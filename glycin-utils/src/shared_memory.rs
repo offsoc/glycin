@@ -1,6 +1,6 @@
 use std::ffi::CString;
 use std::ops::{Deref, DerefMut};
-use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
+use std::os::fd::{AsRawFd, FromRawFd, IntoRawFd, OwnedFd};
 
 use zbus::zvariant;
 
@@ -31,8 +31,7 @@ impl SharedMemory {
     }
 
     pub fn into_texture(self) -> Texture {
-        let owned_fd = unsafe { zvariant::OwnedFd::from_raw_fd(self.memfd.as_raw_fd()) };
-        std::mem::forget(self.memfd);
+        let owned_fd = unsafe { zvariant::OwnedFd::from_raw_fd(self.memfd.into_raw_fd()) };
         Texture::MemFd(owned_fd)
     }
 }
