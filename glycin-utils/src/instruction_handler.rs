@@ -12,17 +12,17 @@ pub struct Communication {
 }
 
 impl Communication {
-    pub fn spawn(decoder: impl Decoder + 'static) {
+    pub fn spawn(decoder: impl LoaderImplementation + 'static) {
         futures_lite::future::block_on(async move {
             let _connection = Communication::new(decoder).await;
             std::future::pending::<()>().await;
         })
     }
 
-    pub async fn new(decoder: impl Decoder + 'static) -> Self {
+    pub async fn new(decoder: impl LoaderImplementation + 'static) -> Self {
         let unix_stream = unsafe { UnixStream::from_raw_fd(std::io::stdin().as_raw_fd()) };
 
-        let instruction_handler = Decoding {
+        let instruction_handler = Loader {
             decoder: Mutex::new(Box::new(decoder)),
         };
         let dbus_connection = zbus::ConnectionBuilder::unix_stream(unix_stream)
@@ -40,22 +40,22 @@ impl Communication {
     }
 }
 
-pub trait Decoder: Send {
+pub trait LoaderImplementation: Send {
     fn init(
         &self,
         stream: UnixStream,
         mime_type: String,
         details: InitializationDetails,
-    ) -> Result<ImageInfo, DecoderError>;
-    fn decode_frame(&self, frame_request: FrameRequest) -> Result<Frame, DecoderError>;
+    ) -> Result<ImageInfo, LoaderError>;
+    fn frame(&self, frame_request: FrameRequest) -> Result<Frame, LoaderError>;
 }
 
-pub struct Decoding {
-    pub decoder: Mutex<Box<dyn Decoder>>,
+pub struct Loader {
+    pub decoder: Mutex<Box<dyn LoaderImplementation>>,
 }
 
 #[zbus::dbus_interface(name = "org.gnome.glycin.Loader")]
-impl Decoding {
+impl Loader {
     async fn init(&self, init_request: InitRequest) -> Result<ImageInfo, RemoteError> {
         let fd = init_request.fd.into_raw_fd();
         let stream = unsafe { UnixStream::from_raw_fd(fd) };
@@ -63,7 +63,7 @@ impl Decoding {
         let image_info = self
             .decoder
             .lock()
-            .or(Err(RemoteError::InternalDecoderError))?
+            .or(Err(RemoteError::InternalLoaderError))?
             .init(stream, init_request.mime_type, init_request.details)?;
 
         Ok(image_info)
@@ -72,8 +72,8 @@ impl Decoding {
     async fn frame(&self, frame_request: FrameRequest) -> Result<Frame, RemoteError> {
         self.decoder
             .lock()
-            .or(Err(RemoteError::InternalDecoderError))?
-            .decode_frame(frame_request)
+            .or(Err(RemoteError::InternalLoaderError))?
+            .frame(frame_request)
             .map_err(Into::into)
     }
 }

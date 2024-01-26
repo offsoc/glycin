@@ -19,13 +19,13 @@ pub struct ImgDecoder {
     pub decoder: Mutex<InitData>,
 }
 
-impl Decoder for ImgDecoder {
+impl LoaderImplementation for ImgDecoder {
     fn init(
         &self,
         mut stream: UnixStream,
         _mime_type: String,
         _details: InitializationDetails,
-    ) -> Result<ImageInfo, DecoderError> {
+    ) -> Result<ImageInfo, LoaderError> {
         let mut data = Vec::new();
         stream.read_to_end(&mut data).context_failed()?;
         let (info, iccp, exif) = basic_info(&data);
@@ -42,9 +42,9 @@ impl Decoder for ImgDecoder {
         Ok(image_info)
     }
 
-    fn decode_frame(&self, _frame_request: FrameRequest) -> Result<Frame, DecoderError> {
+    fn frame(&self, _frame_request: FrameRequest) -> Result<Frame, LoaderError> {
         let Some((data, iccp)) = std::mem::take(&mut *self.decoder.lock().unwrap()) else {
-            return Err(DecoderError::InternalDecoderError);
+            return Err(LoaderError::InternalLoaderError);
         };
 
         let decoder = jpegxl_rs::decode::decoder_builder()

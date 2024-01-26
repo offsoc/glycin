@@ -1,5 +1,5 @@
 use super::{Frame, ImageInfo, MemoryFormat, SharedMemory};
-use crate::{DecoderError, FrameDetails, GenericContexts};
+use crate::{FrameDetails, GenericContexts, LoaderError};
 
 #[derive(Default, Clone, Debug)]
 pub struct Handler {
@@ -45,7 +45,7 @@ impl Handler {
     pub fn frame<'a, T: image::ImageDecoder<'a>>(
         &self,
         mut decoder: T,
-    ) -> Result<Frame, DecoderError> {
+    ) -> Result<Frame, LoaderError> {
         let details = self.frame_details(&mut decoder);
         let color_type = decoder.color_type();
 

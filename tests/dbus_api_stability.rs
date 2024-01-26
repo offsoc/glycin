@@ -61,26 +61,26 @@ fn dbus_api_stability() {
 async fn start_dbus() {
     struct MockDecoder {}
 
-    impl glycin_utils::Decoder for MockDecoder {
+    impl glycin_utils::LoaderImplementation for MockDecoder {
         fn init(
             &self,
             _stream: UnixStream,
             _mime_type: String,
             _details: glycin_utils::InitializationDetails,
-        ) -> Result<glycin_utils::ImageInfo, glycin_utils::DecoderError> {
+        ) -> Result<glycin_utils::ImageInfo, glycin_utils::LoaderError> {
             unimplemented!()
         }
-        fn decode_frame(
+        fn frame(
             &self,
             _frame_request: glycin_utils::FrameRequest,
-        ) -> Result<glycin_utils::Frame, glycin_utils::DecoderError> {
+        ) -> Result<glycin_utils::Frame, glycin_utils::LoaderError> {
             unimplemented!()
         }
     }
 
     let decoder = MockDecoder {};
 
-    let instruction_handler = glycin_utils::Decoding {
+    let instruction_handler = glycin_utils::Loader {
         decoder: Mutex::new(Box::new(decoder)),
     };
 

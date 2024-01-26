@@ -113,13 +113,13 @@ fn worker(format: ImageRsFormat<Reader>, data: Reader, mime_type: String, send: 
     }
 }
 
-impl Decoder for ImgDecoder {
+impl LoaderImplementation for ImgDecoder {
     fn init(
         &self,
         mut stream: UnixStream,
         mime_type: String,
         _details: InitializationDetails,
-    ) -> Result<ImageInfo, DecoderError> {
+    ) -> Result<ImageInfo, LoaderError> {
         let mut buf = Vec::new();
         stream.read_to_end(&mut buf).context_internal()?;
         let data = Cursor::new(buf);
@@ -141,14 +141,14 @@ impl Decoder for ImgDecoder {
         Ok(image_info)
     }
 
-    fn decode_frame(&self, _frame_request: FrameRequest) -> Result<Frame, DecoderError> {
+    fn frame(&self, _frame_request: FrameRequest) -> Result<Frame, LoaderError> {
         let frame = if let Some(decoder) = std::mem::take(&mut *self.format.lock().unwrap()) {
             decoder.frame().context_failed()?
         } else if let Some((ref thread, ref recv)) = *self.thread.lock().unwrap() {
             thread.thread().unpark();
             recv.recv().unwrap()
         } else {
-            return Err(DecoderError::InternalDecoderError);
+            return Err(LoaderError::InternalLoaderError);
         };
 
         Ok(frame)
@@ -177,7 +177,7 @@ pub struct ImageRsFormat<T: std::io::Read + std::io::Seek> {
 }
 
 impl ImageRsFormat<Reader> {
-    fn create(data: Reader, mime_type: &str) -> Result<Self, DecoderError> {
+    fn create(data: Reader, mime_type: &str) -> Result<Self, LoaderError> {
         Ok(match mime_type {
             "image/bmp" => Self::new(ImageRsDecoder::Bmp(
                 codecs::bmp::BmpDecoder::new(data).context_failed()?,
@@ -262,7 +262,7 @@ impl ImageRsFormat<Reader> {
             .format_name("WebP")
             .default_bit_depth(8)
             .supports_two_alpha_modes(true),
-            mime_type => return Err(DecoderError::UnsupportedImageFormat(mime_type.to_string())),
+            mime_type => return Err(LoaderError::UnsupportedImageFormat(mime_type.to_string())),
         })
     }
 }
@@ -317,7 +317,7 @@ impl<'a, T: std::io::Read + std::io::Seek + 'a> ImageRsFormat<T> {
         }
     }
 
-    fn frame(self) -> Result<Frame, DecoderError> {
+    fn frame(self) -> Result<Frame, LoaderError> {
         match self.decoder {
             ImageRsDecoder::Bmp(d) => self.handler.frame(d),
             ImageRsDecoder::Dds(d) => self.handler.frame(d),

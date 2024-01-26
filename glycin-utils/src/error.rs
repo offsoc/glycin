@@ -6,36 +6,36 @@ use gettextrs::gettext;
 pub enum RemoteError {
     #[dbus_error(zbus_error)]
     ZBus(zbus::Error),
-    DecodingError(String),
-    InternalDecoderError,
+    LoadingError(String),
+    InternalLoaderError,
     UnsupportedImageFormat(String),
     ConversionTooLargerError,
 }
 
-impl From<DecoderError> for RemoteError {
-    fn from(err: DecoderError) -> Self {
+impl From<LoaderError> for RemoteError {
+    fn from(err: LoaderError) -> Self {
         match err {
-            DecoderError::DecodingError(msg) => Self::DecodingError(msg),
-            DecoderError::InternalDecoderError => Self::InternalDecoderError,
-            DecoderError::UnsupportedImageFormat(msg) => Self::UnsupportedImageFormat(msg),
-            DecoderError::ConversionTooLargerError => Self::ConversionTooLargerError,
+            LoaderError::LoadingError(msg) => Self::LoadingError(msg),
+            LoaderError::InternalLoaderError => Self::InternalLoaderError,
+            LoaderError::UnsupportedImageFormat(msg) => Self::UnsupportedImageFormat(msg),
+            LoaderError::ConversionTooLargerError => Self::ConversionTooLargerError,
         }
     }
 }
 
 #[derive(Debug)]
-pub enum DecoderError {
-    DecodingError(String),
-    InternalDecoderError,
+pub enum LoaderError {
+    LoadingError(String),
+    InternalLoaderError,
     UnsupportedImageFormat(String),
     ConversionTooLargerError,
 }
 
-impl std::fmt::Display for DecoderError {
+impl std::fmt::Display for LoaderError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
         match self {
-            Self::DecodingError(err) => write!(f, "{err}"),
-            Self::InternalDecoderError => {
+            Self::LoadingError(err) => write!(f, "{err}"),
+            Self::InternalLoaderError => {
                 write!(f, "{}", gettext("Internal error while interpreting image"))
             }
             Self::UnsupportedImageFormat(msg) => {
@@ -46,16 +46,16 @@ impl std::fmt::Display for DecoderError {
     }
 }
 
-impl std::error::Error for DecoderError {}
+impl std::error::Error for LoaderError {}
 
-impl From<anyhow::Error> for DecoderError {
+impl From<anyhow::Error> for LoaderError {
     fn from(err: anyhow::Error) -> Self {
         eprintln!("Decoding error: {err:?}");
-        Self::DecodingError(format!("{err}: {}", err.root_cause()))
+        Self::LoadingError(format!("{err}: {}", err.root_cause()))
     }
 }
 
-impl From<DimensionTooLargerError> for DecoderError {
+impl From<DimensionTooLargerError> for LoaderError {
     fn from(err: DimensionTooLargerError) -> Self {
         eprintln!("Decoding error: {err:?}");
         Self::ConversionTooLargerError
@@ -64,8 +64,8 @@ impl From<DimensionTooLargerError> for DecoderError {
 
 pub trait GenericContexts<T> {
     fn context_failed(self) -> anyhow::Result<T>;
-    fn context_internal(self) -> Result<T, DecoderError>;
-    fn context_unsupported(self, msg: String) -> Result<T, DecoderError>;
+    fn context_internal(self) -> Result<T, LoaderError>;
+    fn context_unsupported(self, msg: String) -> Result<T, LoaderError>;
 }
 
 impl<T, E> GenericContexts<T> for Result<T, E>
@@ -76,12 +76,12 @@ where
         self.with_context(|| gettext("Failed to decode image"))
     }
 
-    fn context_internal(self) -> Result<T, DecoderError> {
-        self.map_err(|_| DecoderError::InternalDecoderError)
+    fn context_internal(self) -> Result<T, LoaderError> {
+        self.map_err(|_| LoaderError::InternalLoaderError)
     }
 
-    fn context_unsupported(self, msg: String) -> Result<T, DecoderError> {
-        self.map_err(|_| DecoderError::UnsupportedImageFormat(msg))
+    fn context_unsupported(self, msg: String) -> Result<T, LoaderError> {
+        self.map_err(|_| LoaderError::UnsupportedImageFormat(msg))
     }
 }
 
@@ -90,12 +90,12 @@ impl<T> GenericContexts<T> for Option<T> {
         self.with_context(|| gettext("Failed to decode image"))
     }
 
-    fn context_internal(self) -> Result<T, DecoderError> {
-        self.ok_or(DecoderError::InternalDecoderError)
+    fn context_internal(self) -> Result<T, LoaderError> {
+        self.ok_or(LoaderError::InternalLoaderError)
     }
 
-    fn context_unsupported(self, msg: String) -> Result<T, DecoderError> {
-        self.ok_or(DecoderError::UnsupportedImageFormat(msg))
+    fn context_unsupported(self, msg: String) -> Result<T, LoaderError> {
+        self.ok_or(LoaderError::UnsupportedImageFormat(msg))
     }
 }
 

@@ -20,7 +20,7 @@ pub struct ImgDecoder {
 }
 
 pub struct ImgDecoderDetails {
-    frame_recv: Receiver<Result<Frame, DecoderError>>,
+    frame_recv: Receiver<Result<Frame, LoaderError>>,
     instr_send: Sender<Instruction>,
     image_info: ImageInfo,
 }
@@ -33,8 +33,8 @@ pub struct Instruction {
 pub fn thread(
     stream: UnixStream,
     base_file: Option<gio::File>,
-    info_send: Sender<Result<ImageInfo, DecoderError>>,
-    frame_send: Sender<Result<Frame, DecoderError>>,
+    info_send: Sender<Result<ImageInfo, LoaderError>>,
+    frame_send: Sender<Result<Frame, LoaderError>>,
     instr_recv: Receiver<Instruction>,
 ) {
     let input_stream = unsafe { gio::UnixInputStream::take_fd(stream) };
@@ -68,7 +68,7 @@ pub fn thread(
     }
 }
 
-pub fn render(renderer: &rsvg::CairoRenderer, instr: Instruction) -> Result<Frame, DecoderError> {
+pub fn render(renderer: &rsvg::CairoRenderer, instr: Instruction) -> Result<Frame, LoaderError> {
     let area = instr.area;
     let (total_width, total_height) = instr.total_size;
 
@@ -121,13 +121,13 @@ pub fn render(renderer: &rsvg::CairoRenderer, instr: Instruction) -> Result<Fram
     Ok(frame)
 }
 
-impl Decoder for ImgDecoder {
+impl LoaderImplementation for ImgDecoder {
     fn init(
         &self,
         stream: UnixStream,
         _mime_type: String,
         details: InitializationDetails,
-    ) -> Result<ImageInfo, DecoderError> {
+    ) -> Result<ImageInfo, LoaderError> {
         let (info_send, info_recv) = channel();
         let (frame_send, frame_recv) = channel();
         let (instr_send, instr_recv) = channel();
@@ -149,7 +149,7 @@ impl Decoder for ImgDecoder {
         Ok(image_info)
     }
 
-    fn decode_frame(&self, frame_request: FrameRequest) -> Result<Frame, DecoderError> {
+    fn frame(&self, frame_request: FrameRequest) -> Result<Frame, LoaderError> {
         let lock = self.thread.lock().unwrap();
         let thread = lock.as_ref().context_internal()?;
 
