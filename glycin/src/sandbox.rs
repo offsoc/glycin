@@ -11,7 +11,8 @@ use nix::sys::resource;
 
 use crate::{Error, SandboxMechanism};
 
-static SYSTEM_SETUP: async_lock::OnceCell<io::Result<SystemSetup>> = async_lock::OnceCell::new();
+static SYSTEM_SETUP: async_lock::Mutex<Option<Arc<io::Result<SystemSetup>>>> =
+    async_lock::Mutex::new(None);
 
 pub struct Sandbox {
     sandbox_mechanism: SandboxMechanism,
@@ -107,7 +108,8 @@ impl Sandbox {
             .collect::<Vec<_>>(),
         );
 
-        let system = SystemSetup::cached().await.as_ref().unwrap();
+        let system_setup_arc = SystemSetup::cached().await;
+        let system = system_setup_arc.as_ref().as_ref().unwrap();
 
         // Symlink paths like /usr/lib64 to /lib64
         for (dest, src) in &system.lib_symlinks {
@@ -180,8 +182,18 @@ struct SystemSetup {
 }
 
 impl SystemSetup {
-    async fn cached() -> &'static io::Result<SystemSetup> {
-        SYSTEM_SETUP.get_or_init(Self::new).await
+    async fn cached() -> Arc<io::Result<SystemSetup>> {
+        let mut system_setup = SYSTEM_SETUP.lock().await;
+
+        if let Some(arc) = &*system_setup {
+            arc.clone()
+        } else {
+            let arc = Arc::new(Self::new().await);
+
+            *system_setup = Some(arc.clone());
+
+            arc
+        }
     }
 
     async fn new() -> io::Result<SystemSetup> {

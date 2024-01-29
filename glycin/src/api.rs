@@ -213,3 +213,16 @@ pub async fn image_formats() -> Vec<MimeType> {
         .cloned()
         .collect()
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[allow(dead_code)]
+    fn ensure_futures_are_send() {
+        gio::glib::spawn_future(async {
+            let loader = Loader::new(gio::File::for_uri("invalid"));
+            let image = loader.request().await.unwrap();
+            image.next_frame().await.unwrap();
+        });
+    }
+}
