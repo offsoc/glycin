@@ -6,7 +6,7 @@ variables:
 .install_dependencies:
   before_script:
     - apt update
-    - apt install -y git curl meson pkg-config build-essential liblcms2-dev gettext clang mold bubblewrap
+    - apt install -y git curl meson pkg-config build-essential liblcms2-dev gettext clang mold bubblewrap libseccomp-dev
     # libdrm-dev libheif-dev libgtk-4-dev
 
     #- git clone --depth 1 https://gitlab.freedesktop.org/cairo/cairo.git

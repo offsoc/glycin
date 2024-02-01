@@ -1,12 +1,17 @@
+// Copyright (c) 2024 GNOME Foundation Inc.
+
 use std::fs::{canonicalize, DirEntry, File};
-use std::io::{self, BufRead, BufReader};
-use std::os::fd::OwnedFd;
+use std::io::{self, BufRead, BufReader, Seek};
+use std::os::fd::{AsRawFd, OwnedFd};
 use std::os::unix::net::UnixStream;
 use std::os::unix::process::CommandExt;
 use std::path::PathBuf;
 use std::process::{Child, Command};
 use std::sync::Arc;
 
+use libseccomp::error::SeccompError;
+use libseccomp::{ScmpAction, ScmpFilterContext, ScmpSyscall};
+use memfd::{Memfd, MemfdOptions};
 use nix::sys::resource;
 
 use crate::{Error, SandboxMechanism};
@@ -14,11 +19,122 @@ use crate::{Error, SandboxMechanism};
 static SYSTEM_SETUP: async_lock::Mutex<Option<Arc<io::Result<SystemSetup>>>> =
     async_lock::Mutex::new(None);
 
+const ALLOWED_SYSCALLS: &[&str] = &[
+    "access",
+    "arch_prctl",
+    "brk",
+    "capget",
+    "capset",
+    "chdir",
+    "clock_getres",
+    "clock_gettime",
+    "clock_gettime64",
+    "clone",
+    "clone3",
+    "close",
+    "connect",
+    "creat",
+    "dup",
+    "epoll_create",
+    "epoll_create1",
+    "epoll_ctl",
+    "epoll_pwait",
+    "epoll_wait",
+    "eventfd",
+    "eventfd2",
+    "execve",
+    "exit",
+    "faccessat",
+    "fchdir",
+    "fcntl",
+    "fcntl",
+    "fcntl64",
+    "ftruncate",
+    "futex",
+    "futex_time64",
+    "get_mempolicy",
+    "getcwd",
+    "getdents64",
+    "getegid",
+    "getegid32",
+    "geteuid",
+    "geteuid32",
+    "getgid",
+    "getgid32",
+    "getpid",
+    "getppid",
+    "getrandom",
+    "gettid",
+    "gettimeofday",
+    "getuid",
+    "getuid32",
+    "ioctl",
+    "madvise",
+    "memfd_create",
+    "mmap",
+    "mmap2",
+    "mprotect",
+    "mremap",
+    "munmap",
+    "newfstatat",
+    "openat",
+    "pipe",
+    "pipe2",
+    "pivot_root",
+    "poll",
+    "ppoll",
+    "ppoll_time64",
+    "prctl",
+    "pread64",
+    "prlimit64",
+    "read",
+    "readlink",
+    "readlinkat",
+    "recvfrom",
+    "recvmsg",
+    "rseq",
+    "rt_sigaction",
+    "rt_sigprocmask",
+    "rt_sigreturn",
+    "sched_getaffinity",
+    "sched_yield",
+    "sendmsg",
+    "sendto",
+    "set_mempolicy",
+    "set_mempolicy",
+    "set_robust_list",
+    "set_thread_area",
+    "set_tid_address",
+    "sigaltstack",
+    "signalfd4",
+    "socket",
+    "socketcall",
+    "statfs",
+    "statfs64",
+    "statx",
+    "timerfd_create",
+    "timerfd_settime",
+    "ugetrlimit",
+    "unshare",
+    "wait4",
+    "write",
+];
+
 pub struct Sandbox {
     sandbox_mechanism: SandboxMechanism,
     command: PathBuf,
     stdin: UnixStream,
     ro_bind_extra: Vec<PathBuf>,
+}
+
+pub struct SpawnedSandbox {
+    pub child: Child,
+    pub info: SandboxInfo,
+}
+
+pub struct SandboxInfo {
+    pub command_dbg: String,
+    pub seccomp_fd: Option<Memfd>,
 }
 
 impl Sandbox {
@@ -35,24 +151,31 @@ impl Sandbox {
         self.ro_bind_extra.push(path);
     }
 
-    pub async fn spawn(self) -> crate::Result<(Child, String)> {
+    pub async fn spawn(self) -> crate::Result<SpawnedSandbox> {
         // Determine command line args
-        let (bin, args, final_arg) = match self.sandbox_mechanism {
+        let (bin, args, seccomp_fd) = match self.sandbox_mechanism {
             SandboxMechanism::Bwrap => {
-                ("bwrap".into(), self.bwrap_args().await?, Some(self.command))
+                let mut args = self.bwrap_args().await?;
+
+                let seccomp_memfd = Self::seccomp_export_bpf(&Self::seccomp_filter()?)?;
+                args.push("--seccomp".into());
+                args.push(seccomp_memfd.as_raw_fd().to_string().into());
+
+                args.push(self.command);
+
+                ("bwrap".into(), args, Some(seccomp_memfd))
             }
             SandboxMechanism::FlatpakSpawn => {
-                (
-                    "flatpak-spawn".into(),
-                    vec![
-                        "--sandbox".into(),
-                        // die with parent
-                        "--watch-bus".into(),
-                        // change working directory to something that exists
-                        "--directory=/".into(),
-                    ],
-                    Some(self.command),
-                )
+                let args = vec![
+                    "--sandbox".into(),
+                    // die with parent
+                    "--watch-bus".into(),
+                    // change working directory to something that exists
+                    "--directory=/".into(),
+                    self.command,
+                ];
+
+                ("flatpak-spawn".into(), args, None)
             }
             SandboxMechanism::NotSandboxed => {
                 eprintln!("WARNING: Glycin running without sandbox.");
@@ -61,28 +184,31 @@ impl Sandbox {
         };
 
         let mut command = Command::new(bin);
-
         command.stdin(OwnedFd::from(self.stdin));
-
         command.args(args);
-        if let Some(arg) = final_arg {
-            command.arg(arg);
-        }
 
         // Set memory limit for sandbox
-        unsafe {
-            command.pre_exec(|| {
-                Self::set_memory_limit();
-                Ok(())
-            });
+        if matches!(self.sandbox_mechanism, SandboxMechanism::Bwrap) {
+            unsafe {
+                command.pre_exec(|| {
+                    Self::set_memory_limit();
+                    Ok(())
+                });
+            }
         }
 
-        let cmd_debug = format!("{:?}", command);
-        let subprocess = command
+        let command_dbg = format!("{:?}", command);
+        let child = command
             .spawn()
-            .map_err(|err| Error::SpawnError(cmd_debug.clone(), Arc::new(err)))?;
+            .map_err(|err| Error::SpawnError(command_dbg.clone(), Arc::new(err)))?;
 
-        Ok((subprocess, cmd_debug))
+        Ok(SpawnedSandbox {
+            child,
+            info: SandboxInfo {
+                command_dbg,
+                seccomp_fd,
+            },
+        })
     }
 
     async fn bwrap_args(&self) -> crate::Result<Vec<PathBuf>> {
@@ -170,6 +296,30 @@ impl Sandbox {
         if let Err(err) = resource::setrlimit(resource::Resource::RLIMIT_AS, limit, limit) {
             eprintln!("Error setrlimit(RLIMIT_AS, {limit}): {err}");
         }
+    }
+
+    fn seccomp_filter() -> Result<ScmpFilterContext, SeccompError> {
+        let mut filter = ScmpFilterContext::new_filter(ScmpAction::Trap)?;
+
+        for syscall_name in ALLOWED_SYSCALLS {
+            let syscall = ScmpSyscall::from_name(syscall_name)?;
+            filter.add_rule(ScmpAction::Allow, syscall).unwrap();
+        }
+
+        Ok(filter)
+    }
+
+    fn seccomp_export_bpf(filter: &ScmpFilterContext) -> crate::Result<Memfd> {
+        let mut memfd = MemfdOptions::default()
+            .close_on_exec(false)
+            .create("seccomp-bpf-filter")?;
+
+        filter.export_bpf(&mut memfd)?;
+
+        let mut file = memfd.as_file();
+        file.rewind().unwrap();
+
+        Ok(memfd)
     }
 }
 

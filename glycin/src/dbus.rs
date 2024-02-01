@@ -1,3 +1,5 @@
+// Copyright (c) 2024 GNOME Foundation Inc.
+
 //! Internal DBus API
 
 use std::os::fd::{AsRawFd, FromRawFd, IntoRawFd};
@@ -14,6 +16,7 @@ use glycin_utils::{
     DimensionTooLargerError, Frame, FrameRequest, ImageInfo, InitRequest, InitializationDetails,
     MemoryFormat, RemoteError, SafeConversion, SafeMath, Texture,
 };
+use libseccomp::error::SeccompError;
 use nix::sys::signal;
 use zbus::zvariant;
 
@@ -56,7 +59,9 @@ impl<'a> DecoderProcess<'a> {
                 sandbox.add_ro_bind(base_dir);
             }
         }
-        let (mut subprocess, cmd_debug) = sandbox.spawn().await?;
+        let spawned_sandbox = sandbox.spawn().await?;
+        let mut subprocess = spawned_sandbox.child;
+        let command_dbg = spawned_sandbox.info.command_dbg;
 
         #[cfg(feature = "tokio")]
         let unix_stream = tokio::net::UnixStream::from_std(unix_stream)?;
@@ -78,8 +83,8 @@ impl<'a> DecoderProcess<'a> {
                 Err(glib::Error::from(gio::Cancelled).into())
             },
             return_status = spawn_blocking(move || subprocess.wait()).fuse() => match return_status {
-                Ok(status) => Err(Error::PrematureExit(status, cmd_debug)),
-                Err(err) => Err(Error::StdIoError(err.into(), cmd_debug)),
+                Ok(status) => Err(Error::PrematureExit(status, command_dbg)),
+                Err(err) => Err(Error::StdIoError(err.into(), command_dbg)),
             }
         }?;
 
@@ -403,6 +408,7 @@ pub enum Error {
     TextureTooSmall { texture_size: usize, frame: String },
     StrideTooSmall(String),
     MemFd(Arc<memfd::Error>),
+    Seccomp(Arc<SeccompError>),
 }
 
 impl Error {
@@ -436,6 +442,12 @@ impl From<std::io::Error> for Error {
 impl From<memfd::Error> for Error {
     fn from(err: memfd::Error) -> Self {
         Self::MemFd(Arc::new(err))
+    }
+}
+
+impl From<SeccompError> for Error {
+    fn from(err: SeccompError) -> Self {
+        Self::Seccomp(Arc::new(err))
     }
 }
 
@@ -487,6 +499,7 @@ impl std::fmt::Display for Error {
             ),
             Self::StrideTooSmall(frame) => write!(f, "Stride is smaller than possible: {frame}"),
             Self::MemFd(err) => write!(f, "Memfd: {err}"),
+            Self::Seccomp(err) => write!(f, "Seccomp: {err}"),
         }
     }
 }
