@@ -22,8 +22,8 @@ async-lock = "3.3.0"
 async-process = "2.0.1"
 futures-channel = "0.3.30"
 futures-util = "0.3.30"
-gdk = { package = "gdk4", version = "0.7.1", features = ["v4_12"] }
-gio = "0.18.1"
+gdk = { package = "gdk4", version = "0.8.0", features = ["v4_12"] }
+gio = "0.19.0"
 glycin-utils = { version = "1.0.0-alpha", path = "../glycin-utils/", default-features = false }
 lcms2 = "6.0.3"
 lcms2-sys = "4.0.4"
