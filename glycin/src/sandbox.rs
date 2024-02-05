@@ -217,6 +217,7 @@ impl Sandbox {
         args.extend(
             [
                 "--unshare-all",
+                "--clearenv",
                 "--die-with-parent",
                 // change working directory to something that exists
                 "--chdir",
@@ -228,6 +229,18 @@ impl Sandbox {
                 // Make tmpfs dev available
                 "--dev",
                 "/dev",
+                // Create a fake HOME for glib to not throw warnings
+                "--tmpfs",
+                "/tmp-home",
+                "--setenv",
+                "HOME",
+                "/tmp-home",
+                // Create a fake runtime dir for glib to not throw warnings
+                "--tmpfs",
+                "/tmp-run",
+                "--setenv",
+                "XDG_RUNTIME_DIR",
+                "/tmp-run",
             ]
             .iter()
             .map(|x| (*x).into())
@@ -259,7 +272,7 @@ impl Sandbox {
         }
 
         // Make loader binary available if not in /usr. This is useful for testing and
-        // adding loaders in user space.
+        // adding loaders in user (/home) configurations.
         if !self.command.starts_with("/usr") {
             args.push("--ro-bind".into());
             args.push(self.command.clone());
