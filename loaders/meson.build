@@ -39,7 +39,10 @@ cargo_env = {
     ).stdout().strip(),
 }
 
+test_args = []
 foreach loader : get_option('loaders')
+  test_args += ['-p', loader]
+
   cargo_build = custom_target(
     loader,
     build_by_default: true,
@@ -83,27 +86,30 @@ foreach loader : get_option('loaders')
   )
 endforeach
 
-if not get_option('test_skip_install')
+if get_option('tests')
+  if not get_option('test_skip_install')
+    test(
+      'test-install',
+      find_program('meson'),
+      args: ['install', '-C', meson.project_build_root()],
+    )
+  endif
+
   test(
-    'test-install',
-    find_program('meson'),
-    args: ['install', '-C', meson.project_build_root()],
+    'cargo-test',
+    cargo_bin,
+    args: [
+      'test',
+      '-p', 'tests',
+      test_args,
+      '--target-dir', target_dir / 'tests',
+      cargo_options,
+      '--',
+      '--test-threads=1',
+      '--nocapture',
+    ],
+    env: { 'XDG_DATA_HOME': datadir, 'GLYCIN_TEST_SKIP_EXT': test_skip_ext },
+    is_parallel: false,
+    timeout: 1800,
   )
 endif
-
-test(
-  'cargo-test',
-  cargo_bin,
-  args: [
-    'test',
-    '--workspace',
-    '--target-dir', target_dir / 'tests',
-    cargo_options,
-    '--',
-    '--test-threads=1',
-    '--nocapture',
-  ],
-  env: { 'XDG_DATA_HOME': datadir, 'GLYCIN_TEST_SKIP_EXT': test_skip_ext },
-  is_parallel: false,
-  timeout: 1800,
-)

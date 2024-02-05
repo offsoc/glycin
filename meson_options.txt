@@ -7,6 +7,7 @@ option(
   ],
   value: 'release',
 )
+
 option(
   'loaders',
   type: 'array',
@@ -24,11 +25,20 @@ option(
   ],
   description: 'List of loaders to build.',
 )
+
 option(
   'test_skip_ext',
   type: 'array',
   description: 'Image filename extensions, exlcuding dots, to skip during tests.'
 )
+
+option(
+  'tests',
+  type: 'boolean',
+  value: true,
+  description: 'Support running tests.'
+)
+
 option(
   'test_skip_install',
   type: 'boolean',

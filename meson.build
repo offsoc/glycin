@@ -5,7 +5,6 @@ project(
     meson_version: '>=0.57',
 )
 
-dependency('gtk4', version: '>= 4.12.0')
 dependency('libseccomp', version: '>= 2.5.0')
 
 if 'glycin-heif' in get_option('loaders')
@@ -18,6 +17,10 @@ endif
 
 if 'glycin-svg' in get_option('loaders')
   dependency('cairo', version: '>= 1.17.0')
+endif
+
+if get_option('tests')
+  dependency('gtk4', version: '>= 4.12.0')
 endif
 
 i18n = import ('i18n')
