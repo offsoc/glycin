@@ -6,6 +6,7 @@ project(
 )
 
 dependency('gtk4', version: '>= 4.12.0')
+dependency('libseccomp', version: '>= 2.5.0')
 
 if 'glycin-heif' in get_option('loaders')
   dependency('libheif', version: '>= 1.17.0')
