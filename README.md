@@ -79,6 +79,21 @@ The following features are supported by the glycin loaders provided in the [load
 | ✘      | Supported by format but not implemented yet |
 | —      | Not available for this format               |
 
+## Sandboxing and Inner Workings
+
+Glycin spawns one process per image file. The communication between glycin and the loader takes place via peer-to-peer D-Bus over a Unix socket.
+
+Glycin supports a sandbox mechanism inside and outside of Flatpaks. Outside of Flatpaks, the following mechanisms are used: The image loader binary is spawned via `bwrap`. The bubblewrap configuration only allows for minimal interaction with the host system. Only necessary parts of the filesystem are mounted and only with read access. There is no direct network access. Environment variables are not passed to the sandbox. Before forking the process the memory usage is limited via calling `setrlimit` and syscalls are limited to an allow-list via seccomp filters.
+
+Inside of Flatpaks the `flatpak-spawn --sandbox` command is used. This restricts the access to the filesystem in a similar way as the direct `bwrap` call. The memory usage is currently not limited. No additional seccomp filters are applied to the existing Flatpak seccomp rules.
+
+The GFile content is streamed to the loader via a Unix socket. This way, loaders can load contents that require network access, without having direct network access themselves. Formats like SVG set the `ExposeBaseDir = true` option in their config. This option causes the original image file's directory to be mounted into the sandbox to include external image files from there. The `ExposeBaseDir` option has no effect for `flatpak-spawn` sandboxes since they don't support this feature.
+
+The loaders provide the texture data via a memfd that is sealed by glycin and then given as an mmap to GDK. For animations and SVGs the sandboxed process is kept alive for new frames or tiles as long as needed.
+
+For information on how to implement a loader, please consult the [`glycin-utils` docs](https://docs.rs/glycin-utils/).
+
+
 ## Building and Testing
 
 - The `-Dloaders` option allows to only build certain loaders.
@@ -93,12 +108,6 @@ Distributions need to package the loader binaries and their configs independent 
 Apps will depend on the `glycin` crate to make use of the installed binary loaders.
 
 [![Packaging Status](https://repology.org/badge/vertical-allrepos/glycin-loaders.svg?exclude_unsupported=1&header=)](https://repology.org/project/glycin-loaders/versions)
-
-## Inner Workings
-
-Glycin spawns one sandboxed process per image file via `bwrap` or `flatpak-spawn`. The communication happens via peer-to-peer D-Bus over a UNIX socket. The file data is read from a `GFile` and sent to the sandbox via a separate UNIX socket. The texture data is provided from the sandbox via a memfd that is sealed afterward and given as an mmap to GTK. For animations and SVGs the sandboxed process is kept alive for new frames or tiles as long as needed.
-
-To implement a new loader, please consult the [`glycin-utils` docs](https://docs.rs/glycin-utils/).
 
 ## License
 
