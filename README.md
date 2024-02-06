@@ -68,7 +68,7 @@ The following features are supported by the glycin loaders provided in the [load
 | OpenEXR  | image-rs | —   | —    | —    | —   | —         | image-rs                   |
 | PNG      | image-rs | ✔   | ✘    | ✔    | ✘   | ✔         | image-rs                   |
 | PNM      | image-rs | —   | —    | —    | —   | —         | image-rs                   |
-| SVG      | image-rs | ✘   | —    | —    | ✘   | —         | librsvg + gdk-pixbuf (C)   |
+| SVG      | image-rs | ✘   | —    | —    | ✘   | —         | librsvg + gio/cairo (C)    |
 | TGA      | image-rs | —   | —    | —    | —   | —         | image-rs                   |
 | TIFF     | image-rs | ✔   | —    | ✔    | ✘   | —         | image-rs                   |
 | WEBP     | image-rs | ✔   | —    | ✔    | ✘   | ✔         | image-rs                   |
@@ -92,7 +92,6 @@ The GFile content is streamed to the loader via a Unix socket. This way, loaders
 The loaders provide the texture data via a memfd that is sealed by glycin and then given as an mmap to GDK. For animations and SVGs the sandboxed process is kept alive for new frames or tiles as long as needed.
 
 For information on how to implement a loader, please consult the [`glycin-utils` docs](https://docs.rs/glycin-utils/).
-
 
 ## Building and Testing
 
