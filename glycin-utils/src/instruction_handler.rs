@@ -2,7 +2,7 @@
 
 use std::os::fd::{AsRawFd, FromRawFd, IntoRawFd};
 use std::os::raw::{c_int, c_void};
-pub use std::os::unix::net::UnixStream;
+use std::os::unix::net::UnixStream;
 use std::sync::Mutex;
 
 pub use anyhow;

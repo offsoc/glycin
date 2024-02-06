@@ -16,6 +16,10 @@ pub mod save_math;
 #[cfg(feature = "loader-utils")]
 pub mod shared_memory;
 
+#[cfg(feature = "loader-utils")]
+#[doc(no_inline)]
+pub use std::os::unix::net::UnixStream;
+
 pub use dbus::*;
 pub use error::*;
 #[cfg(feature = "loader-utils")]
