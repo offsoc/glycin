@@ -229,6 +229,10 @@ impl Sandbox {
                 // Make tmpfs dev available
                 "--dev",
                 "/dev",
+                // Additional linker configuration via /etc/ld.so.conf if available
+                "--ro-bind-try",
+                "/etc/ld.so.cache",
+                "/etc/ld.so.cache",
                 // Create a fake HOME for glib to not throw warnings
                 "--tmpfs",
                 "/tmp-home",
