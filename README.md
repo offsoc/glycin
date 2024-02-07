@@ -85,7 +85,7 @@ Glycin spawns one process per image file. The communication between glycin and t
 
 Glycin supports a sandbox mechanism inside and outside of Flatpaks. Outside of Flatpaks, the following mechanisms are used: The image loader binary is spawned via `bwrap`. The bubblewrap configuration only allows for minimal interaction with the host system. Only necessary parts of the filesystem are mounted and only with read access. There is no direct network access. Environment variables are not passed to the sandbox. Before forking the process the memory usage is limited via calling `setrlimit` and syscalls are limited to an allow-list via seccomp filters.
 
-Inside of Flatpaks the `flatpak-spawn --sandbox` command is used. This restricts the access to the filesystem in a similar way as the direct `bwrap` call. The memory usage is currently not limited. No additional seccomp filters are applied to the existing Flatpak seccomp rules.
+Inside of Flatpaks the `flatpak-spawn --sandbox` command is used. This restricts the access to the filesystem in a similar way as the direct `bwrap` call. The memory usage is limited by wrapping the loader call into a `prlimit` command. No additional seccomp filters are applied to the existing Flatpak seccomp rules.
 
 The GFile content is streamed to the loader via a Unix socket. This way, loaders can load contents that require network access, without having direct network access themselves. Formats like SVG set the `ExposeBaseDir = true` option in their config. This option causes the original image file's directory to be mounted into the sandbox to include external image files from there. The `ExposeBaseDir` option has no effect for `flatpak-spawn` sandboxes since they don't support this feature.
 

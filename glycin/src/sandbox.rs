@@ -166,12 +166,18 @@ impl Sandbox {
                 ("bwrap".into(), args, Some(seccomp_memfd))
             }
             SandboxMechanism::FlatpakSpawn => {
+                let memory_limit = Self::memory_limit();
+
                 let args = vec![
                     "--sandbox".into(),
                     // die with parent
                     "--watch-bus".into(),
                     // change working directory to something that exists
                     "--directory=/".into(),
+                    // Start loader with memory limit
+                    "prlimit".into(),
+                    format!("--as={memory_limit}").into(),
+                    // Loader binary
                     self.command,
                 ];
 
@@ -286,7 +292,8 @@ impl Sandbox {
         Ok(args)
     }
 
-    fn set_memory_limit() {
+    /// Memory limit that should be used in bytes
+    fn memory_limit() -> resource::rlim_t {
         // Default to 1 GB memory limit
         let mut limit: resource::rlim_t = 1024 * 1024 * 1024;
 
@@ -309,6 +316,12 @@ impl Sandbox {
                 }
             }
         }
+
+        limit
+    }
+
+    fn set_memory_limit() {
+        let limit = Self::memory_limit();
 
         if let Err(err) = resource::setrlimit(resource::Resource::RLIMIT_AS, limit, limit) {
             eprintln!("Error setrlimit(RLIMIT_AS, {limit}): {err}");
