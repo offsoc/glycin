@@ -19,7 +19,6 @@ anyhow = { version = "1.0.71", features = ["backtrace"] }
 async-fs = "2.1.0"
 async-global-executor = "2.4.1"
 async-lock = "3.3.0"
-async-process = "2.0.1"
 futures-channel = "0.3.30"
 futures-util = "0.3.30"
 gdk = { package = "gdk4", version = "0.8.0", features = ["v4_12"] }
@@ -32,7 +31,6 @@ libseccomp = "0.3.0"
 memfd = "0.6.3"
 memmap = { package = "memmap2", version = "0.9.0" }
 nix = { version = "0.27.0", features = ["fs", "resource", "signal"] }
-rgb = "0.8.36"
 tokio = { version = "1.35.1", optional = true }
 zbus = "3.13.1"
 
