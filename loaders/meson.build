@@ -87,12 +87,42 @@ foreach loader : get_option('loaders')
 endforeach
 
 if get_option('tests')
+  destdir = meson.project_build_root() / '_test-install'
+
   if not get_option('test_skip_install')
     test(
-      'test-install',
+      'install-integration-test',
       find_program('meson'),
-      args: ['install', '-C', meson.project_build_root()],
+      args: [
+        'install',
+        '-C',
+        meson.project_build_root(),
+        '--destdir',
+        destdir,
+      ],
+      is_parallel: false,
     )
+
+    # Rewrite config to point into destdir
+    setup_integration_test = find_program(meson.project_source_root() / 'build-aux/setup-integration-test.py')
+    foreach loader : get_option('loaders')
+      test(
+        'setup-integration-test-' + loader,
+        setup_integration_test,
+        env: {
+          'DESTDIR': destdir,
+          'CONFIG_FILE': glycin_datadir / 'conf.d' / loader + '.conf',
+        },
+        is_parallel: false,
+      )
+    endforeach
+  endif
+
+  env = { 'GLYCIN_TEST_SKIP_EXT': test_skip_ext }
+
+  if not get_option('test_skip_install')
+    # Use string concatenation to combine two absolute paths
+    env += { 'GLYCIN_DATA_DIR': destdir + datadir  }
   endif
 
   test(
@@ -108,7 +138,7 @@ if get_option('tests')
       '--test-threads=1',
       '--nocapture',
     ],
-    env: { 'XDG_DATA_HOME': datadir, 'GLYCIN_TEST_SKIP_EXT': test_skip_ext },
+    env: env,
     is_parallel: false,
     timeout: 1800,
   )

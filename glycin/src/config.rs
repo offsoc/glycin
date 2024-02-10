@@ -45,10 +45,7 @@ impl Config {
     async fn load() -> Self {
         let mut config = Config::default();
 
-        let mut data_dirs = glib::system_data_dirs();
-        data_dirs.push(glib::user_data_dir());
-
-        for mut data_dir in data_dirs {
+        for mut data_dir in Self::data_dirs() {
             data_dir.push("glycin-loaders");
             data_dir.push(format!("{COMPAT_VERSION}+"));
             data_dir.push("conf.d");
@@ -100,5 +97,16 @@ impl Config {
         }
 
         Ok(())
+    }
+
+    fn data_dirs() -> Vec<PathBuf> {
+        // Force only specific data dir via env variable
+        if let Some(data_dir) = std::env::var_os("GLYCIN_DATA_DIR") {
+            vec![data_dir.into()]
+        } else {
+            let mut data_dirs = glib::system_data_dirs();
+            data_dirs.push(glib::user_data_dir());
+            data_dirs
+        }
     }
 }

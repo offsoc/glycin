@@ -28,14 +28,6 @@ variables:
     paths:
       - tests/failures
       - builddir/meson-logs
-i386:
-  image: rust@sha256:05126659e6a1ddfd54def494bd485bb50b19446f61c92cb1c6559aa6cfecd922
-  extends: .install_dependencies
-  interruptible: true
-  script:
-    - export LD_LIBRARY_PATH=/usr/local/lib/i386-linux-gnu/
-    - meson setup -Dprofile=dev builddir
-    - meson test -vC builddir
 
 x86_64:
   image: rust:1.73-bookworm
@@ -43,7 +35,19 @@ x86_64:
   interruptible: true
   script:
     - export LD_LIBRARY_PATH=/usr/local/lib/x86_64-linux-gnu/
-    - meson setup -Dprofile=dev builddir
+    # Skip isolated install for tests to test usual installation scenario
+    - meson setup -Dprofile=dev -Dtest_skip_install=true builddir
+    - meson install -C builddir
+    - meson test -vC builddir
+
+i386:
+  image: rust@sha256:05126659e6a1ddfd54def494bd485bb50b19446f61c92cb1c6559aa6cfecd922
+  extends: .install_dependencies
+  interruptible: true
+  script:
+    - export LD_LIBRARY_PATH=/usr/local/lib/i386-linux-gnu/
+    - meson setup -Dprofile=dev -Dtest_skip_install=true builddir
+    - meson install -C builddir
     - meson test -vC builddir
 
 aarch64:
@@ -54,7 +58,8 @@ aarch64:
   interruptible: true
   script:
     - export LD_LIBRARY_PATH=/usr/local/lib/aarch64-linux-gnu/
-    - meson setup -Dprofile=dev builddir
+    - meson setup -Dprofile=dev -Dtest_skip_install=true builddir
+    - meson install -C builddir
     - meson test -vC builddir
 
 cargo-deny:
