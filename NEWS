@@ -1,9 +1,19 @@
 ## 1.0.beta
 
+- Consitently use Loader instead of Decoder terminology in code
+
 - glycin/utils: Only use checked math operations
+- glycin: Add seccomp filter based on allow list for bwrap sandboxes
 - glycin: Attach command line to error messages
+- glycin: Clear env when using bwrap sandbox
+- glycin: Fix closing an already closed fd
+- glycin: Fix race condition in initialization
+- glycin: Limit memory usage when using flatpak sandbox
+- glycin: Retry sealing an memfd if it fails
+- glycin: Use more robust transfer of /lib.. symlinks into sandbox
 - jxl: Support Exif
 - jxl: Use libjxl instead of jxl-oxide for performance reasons
+- loaders: Use isolated install for tests in meson
 - utils: Add root cause info to decoding errors
 
 ## 1.0.alpha
