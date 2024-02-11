@@ -30,7 +30,7 @@ variables:
       - builddir/meson-logs
 
 x86_64:
-  image: rust:1.73-bookworm
+  image: rust:1.74-bookworm
   extends: .install_dependencies
   interruptible: true
   script:
@@ -41,6 +41,7 @@ x86_64:
     - meson test -vC builddir
 
 i386:
+  # Use hash to force i386, lookup here <https://hub.docker.com/r/i386/rust/tags>
   image: rust@sha256:05126659e6a1ddfd54def494bd485bb50b19446f61c92cb1c6559aa6cfecd922
   extends: .install_dependencies
   interruptible: true
@@ -51,7 +52,7 @@ i386:
     - meson test -vC builddir
 
 aarch64:
-  image: rust:bookworm
+  image: rust:1.74-bookworm
   tags:
     - aarch64
   extends: .install_dependencies
