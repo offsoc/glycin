@@ -2,9 +2,9 @@ use anyhow::Context;
 use gettextrs::gettext;
 
 #[derive(zbus::DBusError, Debug, Clone)]
-#[dbus_error(prefix = "org.gnome.glycin.Error")]
+#[zbus(prefix = "org.gnome.glycin.Error")]
 pub enum RemoteError {
-    #[dbus_error(zbus_error)]
+    #[zbus(error)]
     ZBus(zbus::Error),
     LoadingError(String),
     InternalLoaderError,

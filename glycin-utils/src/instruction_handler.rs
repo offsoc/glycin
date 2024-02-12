@@ -1,6 +1,6 @@
 // Copyright (c) 2024 GNOME Foundation Inc.
 
-use std::os::fd::{AsRawFd, FromRawFd, IntoRawFd};
+use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
 use std::os::raw::{c_int, c_void};
 use std::os::unix::net::UnixStream;
 use std::sync::Mutex;
@@ -106,11 +106,11 @@ pub struct Loader {
     pub decoder: Mutex<Box<dyn LoaderImplementation>>,
 }
 
-#[zbus::dbus_interface(name = "org.gnome.glycin.Loader")]
+#[zbus::interface(name = "org.gnome.glycin.Loader")]
 impl Loader {
     async fn init(&self, init_request: InitRequest) -> Result<ImageInfo, RemoteError> {
-        let fd = init_request.fd.into_raw_fd();
-        let stream = unsafe { UnixStream::from_raw_fd(fd) };
+        let fd = OwnedFd::from(init_request.fd);
+        let stream = UnixStream::from(fd);
 
         let image_info = self
             .decoder

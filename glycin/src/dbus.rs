@@ -2,7 +2,7 @@
 
 //! Internal DBus API
 
-use std::os::fd::{AsRawFd, FromRawFd, IntoRawFd};
+use std::os::fd::{AsRawFd, OwnedFd};
 use std::os::unix::net::UnixStream;
 use std::process::ExitStatus;
 use std::sync::Arc;
@@ -69,7 +69,7 @@ impl<'a> DecoderProcess<'a> {
         let guid = zbus::Guid::generate();
         let dbus_result = zbus::ConnectionBuilder::unix_stream(unix_stream)
             .p2p()
-            .server(&guid)
+            .server(guid)?
             .auth_mechanisms(&[zbus::AuthMechanism::Anonymous])
             .build()
             .shared();
@@ -94,7 +94,10 @@ impl<'a> DecoderProcess<'a> {
 
         let dbus_connection = dbus_result.await?;
 
-        let decoding_instruction = LoaderProxy::new(&dbus_connection)
+        let decoding_instruction = LoaderProxy::builder(&dbus_connection)
+            // Ununsed since P2P connection
+            .destination("org.gnome.glycin")?
+            .build()
             .await
             .expect("Failed to create decoding instruction proxy");
 
@@ -114,7 +117,7 @@ impl<'a> DecoderProcess<'a> {
 
         gfile_worker.write_to(writer)?;
 
-        let fd = unsafe { zvariant::OwnedFd::from_raw_fd(remote_reader.into_raw_fd()) };
+        let fd = zvariant::OwnedFd::from(OwnedFd::from(remote_reader));
 
         let mime_type = self.mime_type.clone();
 
@@ -262,7 +265,7 @@ impl<'a> DecoderProcess<'a> {
 use std::io::Write;
 const BUF_SIZE: usize = u16::MAX as usize;
 
-#[zbus::dbus_proxy(
+#[zbus::proxy(
     interface = "org.gnome.glycin.Loader",
     default_path = "/org/gnome/glycin"
 )]
