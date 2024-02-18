@@ -293,34 +293,57 @@ impl Sandbox {
         Ok(args)
     }
 
-    /// Memory limit that should be used in bytes
+    /// Memory limit in bytes that should be applied to sandboxes
     fn memory_limit() -> resource::rlim_t {
-        // Default to 1 GB memory limit
-        let mut limit: resource::rlim_t = 1024 * 1024 * 1024;
-
         // Lookup free memory
+        if let Some(mem_available) = Self::mem_available() {
+            Self::calculate_memory_limit(mem_available)
+        } else {
+            eprintln!("glycin: Unable to determine available memory via /proc/meminfo");
+
+            // Default to 1 GB memory limit
+            1024 * 1024 * 1024
+        }
+    }
+
+    /// Try to determine how much memory is available on the system
+    fn mem_available() -> Option<resource::rlim_t> {
         if let Ok(file) = File::open("/proc/meminfo") {
             let meminfo = BufReader::new(file);
 
             for line in meminfo.lines().flatten() {
                 if line.starts_with("MemAvailable:") {
-                    if let Some(value) = line
+                    if let Some(mem_avail_kb) = line
                         .split(' ')
                         .filter(|x| !x.is_empty())
                         .nth(1)
                         .and_then(|x| x.parse::<resource::rlim_t>().ok())
                     {
-                        limit = value.saturating_mul(1024);
-                        // Keep 200 MB free
-                        limit = limit.saturating_sub(1024 * 1024 * 200);
+                        let mem_available = mem_avail_kb.saturating_mul(1024);
+
+                        return Some(Self::calculate_memory_limit(mem_available));
                     }
                 }
             }
         }
 
+        None
+    }
+
+    /// Calculate memory that the sandbox will be allowed to use
+    fn calculate_memory_limit(mem_available: resource::rlim_t) -> resource::rlim_t {
+        // Consider max of 10 GB free RAM for use
+        let mem_considered = resource::rlim_t::min(mem_available, 1024 * 1024 * 1024 * 10)
+            // Keep at least 200 MB free
+            .saturating_sub(1024 * 1024 * 200);
+
+        // Allow usage of 80% of considered memory
+        let limit = (mem_considered as f64 * 0.8) as resource::rlim_t;
+
         limit
     }
 
+    /// Set memory limit for the current process
     fn set_memory_limit() {
         let limit = Self::memory_limit();
 
