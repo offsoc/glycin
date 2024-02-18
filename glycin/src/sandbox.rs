@@ -333,9 +333,12 @@ impl Sandbox {
     /// Calculate memory that the sandbox will be allowed to use
     fn calculate_memory_limit(mem_available: resource::rlim_t) -> resource::rlim_t {
         // Consider max of 10 GB free RAM for use
-        let mem_considered = resource::rlim_t::min(mem_available, 1024 * 1024 * 1024 * 10)
-            // Keep at least 200 MB free
-            .saturating_sub(1024 * 1024 * 200);
+        let mem_considered = resource::rlim_t::min(
+            mem_available,
+            (1024 as resource::rlim_t * 1024 * 1024).saturating_mul(10),
+        )
+        // Keep at least 200 MB free
+        .saturating_sub(1024 * 1024 * 200);
 
         // Allow usage of 80% of considered memory
         let limit = (mem_considered as f64 * 0.8) as resource::rlim_t;
