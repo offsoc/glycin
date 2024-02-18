@@ -1,3 +1,9 @@
+## 1.0.beta.1
+
+- Update to zbus 4.0
+
+- glycin: Use more fine-tuned memory limits using max 80% available memory
+
 ## 1.0.beta
 
 - Consitently use Loader instead of Decoder terminology in code

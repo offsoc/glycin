@@ -23,6 +23,14 @@ $ GLYCIN_DATA_DIR=$(pwd)/install/share cargo r -p tools --bin glycin-image-info 
 $ identify -format '%[EXIF:*]' <image>
 ```
 
+## Test D-Bus API stability
+
+The following test will ensure that the lastest API documented in `docs/` hasn't changed.
+
+```
+$ GLYCIN_DATA_DIR=$(pwd)/install/share cargo test -p tests -- dbus_api_stability --include-ignored
+```
+
 ## Resources
 
 - [xdg/shared-mime-info](https://gitlab.freedesktop.org/xdg/shared-mime-info/-/blob/master/data/freedesktop.org.xml.in)
