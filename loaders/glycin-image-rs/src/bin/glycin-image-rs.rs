@@ -6,7 +6,8 @@ use std::sync::Mutex;
 
 use glycin_utils::image_rs::Handler;
 use glycin_utils::*;
-use image::{codecs, AnimationDecoder};
+use image::io::Limits;
+use image::{codecs, AnimationDecoder, ImageDecoder, ImageResult};
 
 fn main() {
     Communication::spawn(ImgDecoder::default());
@@ -125,6 +126,9 @@ impl LoaderImplementation for ImgDecoder {
         let data = Cursor::new(buf);
 
         let mut format = ImageRsFormat::create(data.clone(), &mime_type)?;
+        if let Err(err) = format.set_no_limits() {
+            eprint!("Failed to unset decoder limits: {err}");
+        }
         let mut image_info = format.info();
 
         let exif = exif::Reader::new().read_from_container(&mut data.clone());
@@ -350,6 +354,26 @@ impl<'a, T: std::io::Read + std::io::Seek + 'a> ImageRsFormat<T> {
             ImageRsDecoder::Tga(ref mut d) => self.handler.frame_details(d),
             ImageRsDecoder::Tiff(ref mut d) => self.handler.frame_details(d),
             ImageRsDecoder::WebP(ref mut d) => self.handler.frame_details(d),
+        }
+    }
+
+    fn set_no_limits(&mut self) -> ImageResult<()> {
+        let limits = Limits::no_limits();
+
+        match self.decoder {
+            ImageRsDecoder::Bmp(ref mut d) => d.set_limits(limits),
+            ImageRsDecoder::Dds(ref mut d) => d.set_limits(limits),
+            ImageRsDecoder::Farbfeld(ref mut d) => d.set_limits(limits),
+            ImageRsDecoder::Gif(ref mut d) => d.set_limits(limits),
+            ImageRsDecoder::Ico(ref mut d) => d.set_limits(limits),
+            ImageRsDecoder::Jpeg(ref mut d) => d.set_limits(limits),
+            ImageRsDecoder::OpenExr(ref mut d) => d.set_limits(limits),
+            ImageRsDecoder::Png(ref mut d) => d.set_limits(limits),
+            ImageRsDecoder::Pnm(ref mut d) => d.set_limits(limits),
+            ImageRsDecoder::Qoi(ref mut d) => d.set_limits(limits),
+            ImageRsDecoder::Tga(ref mut d) => d.set_limits(limits),
+            ImageRsDecoder::Tiff(ref mut d) => d.set_limits(limits),
+            ImageRsDecoder::WebP(ref mut d) => d.set_limits(limits),
         }
     }
 }
