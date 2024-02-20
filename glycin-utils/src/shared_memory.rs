@@ -1,10 +1,11 @@
 use std::ffi::CString;
 use std::ops::{Deref, DerefMut};
 use std::os::fd::{AsRawFd, OwnedFd};
+use std::sync::Arc;
 
 use zbus::zvariant;
 
-use super::Texture;
+use crate::{BinaryData, SafeConversion};
 
 #[derive(Debug)]
 pub struct SharedMemory {
@@ -30,9 +31,33 @@ impl SharedMemory {
         Self { mmap, memfd }
     }
 
-    pub fn into_texture(self) -> Texture {
+    pub fn into_binary_data(self) -> BinaryData {
         let owned_fd = zvariant::OwnedFd::from(self.memfd);
-        Texture::MemFd(owned_fd)
+        BinaryData {
+            memfd: Arc::new(owned_fd),
+        }
+    }
+}
+
+impl<T: AsRef<[u8]>> From<T> for SharedMemory {
+    fn from(value: T) -> Self {
+        let mut shared_memory = SharedMemory::new(
+            value
+                .as_ref()
+                .len()
+                .try_u64()
+                .expect("Required memory too large"),
+        );
+
+        shared_memory.copy_from_slice(value.as_ref());
+
+        shared_memory
+    }
+}
+
+impl<T: AsRef<[u8]>> From<T> for BinaryData {
+    fn from(value: T) -> Self {
+        SharedMemory::from(value).into_binary_data()
     }
 }
 

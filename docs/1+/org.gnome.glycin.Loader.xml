@@ -8,7 +8,7 @@
     </method>
     <method name="Frame">
       <arg name="frame_request" type="a{sv}" direction="in"/>
-      <arg type="(uuuu(uh)(tu)a{sv})" direction="out"/>
+      <arg type="(uuuuh(tu)a{sv})" direction="out"/>
     </method>
   </interface>
 </node>

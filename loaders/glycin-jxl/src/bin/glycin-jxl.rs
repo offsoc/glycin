@@ -34,7 +34,7 @@ impl LoaderImplementation for ImgDecoder {
 
         let mut image_info = ImageInfo::new(info.xsize, info.ysize);
         image_info.details.format_name = Some(String::from("JPEG XL"));
-        image_info.details.exif = exif;
+        image_info.details.exif = exif.map(BinaryData::from);
         image_info.details.transformations_applied = true;
 
         *self.decoder.lock().unwrap() = Some((data, iccp));
@@ -68,11 +68,11 @@ impl LoaderImplementation for ImgDecoder {
         Cursor::new(memory.as_mut())
             .write_all(&bytes)
             .context_internal()?;
-        let texture = memory.into_texture();
+        let texture = memory.into_binary_data();
 
         let mut frame = Frame::new(width, height, memory_format, texture).context_failed()?;
 
-        frame.details.iccp = iccp;
+        frame.details.iccp = iccp.map(BinaryData::from);
 
         if bits != 8 {
             frame.details.bit_depth = Some(bits);

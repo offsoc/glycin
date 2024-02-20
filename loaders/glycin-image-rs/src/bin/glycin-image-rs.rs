@@ -90,7 +90,7 @@ fn worker(format: ImageRsFormat<Reader>, data: Reader, mime_type: String, send: 
                     Cursor::new(buffer.into_raw())
                         .read_exact(&mut memory)
                         .unwrap();
-                    let texture = memory.into_texture();
+                    let texture = memory.into_binary_data();
 
                     let mut out_frame = Frame::new(width, height, memory_format, texture).unwrap();
                     out_frame.delay = delay.into();
@@ -132,7 +132,7 @@ impl LoaderImplementation for ImgDecoder {
         let mut image_info = format.info();
 
         let exif = exif::Reader::new().read_from_container(&mut data.clone());
-        image_info.details.exif = exif.ok().map(|x| x.buf().to_vec());
+        image_info.details.exif = exif.ok().map(|x| BinaryData::from(x.buf().to_vec()));
 
         if format.decoder.is_animated() {
             let (send, recv) = channel();

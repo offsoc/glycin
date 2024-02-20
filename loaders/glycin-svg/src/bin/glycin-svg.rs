@@ -107,7 +107,7 @@ pub fn render(renderer: &rsvg::CairoRenderer, instr: Instruction) -> Result<Fram
     let mut memory = SharedMemory::new(data.len().try_u64()?);
 
     Cursor::new(data).read_exact(&mut memory).unwrap();
-    let texture = memory.into_texture();
+    let texture = memory.into_binary_data();
 
     let mut frame = Frame::new(
         width.try_u32()?,

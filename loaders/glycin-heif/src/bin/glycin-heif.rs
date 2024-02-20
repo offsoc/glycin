@@ -37,7 +37,7 @@ impl LoaderImplementation for ImgDecoder {
         };
 
         let mut image_info = ImageInfo::new(handle.width(), handle.height());
-        image_info.details.exif = exif(&handle);
+        image_info.details.exif = exif(&handle).map(BinaryData::from);
         image_info.details.format_name = Some(format_name.to_string());
 
         // TODO: Later use libheif 1.16 to get info if there is a transformation
@@ -147,11 +147,11 @@ fn decode(context: HeifContext, mime_type: &str) -> Result<Frame, LoaderError> {
 
     let mut memory = SharedMemory::new(plane.stride.try_u64()? * u64::from(plane.height));
     Cursor::new(plane.data).read_exact(&mut memory).unwrap();
-    let texture = memory.into_texture();
+    let texture = memory.into_binary_data();
 
     let mut frame = Frame::new(plane.width, plane.height, memory_format, texture)?;
     frame.stride = plane.stride.try_u32()?;
-    frame.details.iccp = icc_profile;
+    frame.details.iccp = icc_profile.map(BinaryData::from);
     if plane.bits_per_pixel > 8 {
         frame.details.bit_depth = Some(plane.bits_per_pixel);
     }

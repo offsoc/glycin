@@ -2,6 +2,7 @@
 
 //! Internal DBus API
 
+use std::mem;
 use std::os::fd::{AsRawFd, OwnedFd};
 use std::os::unix::net::UnixStream;
 use std::process::ExitStatus;
@@ -14,7 +15,7 @@ use gdk::prelude::*;
 use gio::glib;
 use glycin_utils::{
     DimensionTooLargerError, Frame, FrameRequest, ImageInfo, InitRequest, InitializationDetails,
-    MemoryFormat, RemoteError, SafeConversion, SafeMath, Texture,
+    MemoryFormat, RemoteError, SafeConversion, SafeMath,
 };
 use libseccomp::error::SeccompError;
 use nix::sys::signal;
@@ -141,14 +142,28 @@ impl<'a> DecoderProcess<'a> {
             result = reader_error.fuse() => result,
         }?;
 
-        image_info.await.map_err(Into::into)
+        let image_info = image_info.await?;
+
+        // Seal all memfds
+        if let Some(exif) = &image_info.details.exif {
+            seal_fd(exif)?;
+        }
+        if let Some(xmp) = &image_info.details.xmp {
+            seal_fd(xmp)?;
+        }
+
+        Ok(image_info)
     }
 
     pub async fn decode_frame(&self, frame_request: FrameRequest) -> Result<api::Frame, Error> {
         let mut frame = self.decoding_instruction.frame(frame_request).await?;
 
-        let Texture::MemFd(fd) = &frame.texture;
-        let raw_fd = fd.as_raw_fd();
+        // Seal all constant data
+        if let Some(iccp) = &frame.details.iccp {
+            seal_fd(iccp)?;
+        }
+
+        let raw_fd = frame.texture.as_raw_fd();
         let borrowed_fd = unsafe { std::os::fd::BorrowedFd::borrow_raw(raw_fd) };
         let mut original_mmap = unsafe { memmap::MmapMut::map_mut(raw_fd) }?;
 
@@ -163,7 +178,7 @@ impl<'a> DecoderProcess<'a> {
             return Err(Error::StrideTooSmall(format!("{:?}", frame)));
         }
 
-        if let Some(icc_profile) = frame.details.iccp.clone() {
+        if let Some(Ok(icc_profile)) = frame.details.iccp.as_ref().map(|x| x.get()) {
             // Align stride with pixel size if necessary
             let icc_mmap = if frame.stride.srem(frame.memory_format.n_bytes().u32())? != 0 {
                 let width = frame
@@ -209,23 +224,7 @@ impl<'a> DecoderProcess<'a> {
             drop(original_mmap);
         }
 
-        let mfd = memfd::Memfd::try_from_fd(raw_fd).unwrap();
-        // In rare circumstances the sealing returns a ResourceBusy
-        for i in 0.. {
-            // 🦭
-            let seal = mfd.add_seals(&[
-                memfd::FileSeal::SealShrink,
-                memfd::FileSeal::SealGrow,
-                memfd::FileSeal::SealWrite,
-                memfd::FileSeal::SealSeal,
-            ]);
-
-            match seal {
-                Ok(_) => break,
-                Err(err) if i > 10000 => return Err(err.into()),
-                Err(_) => {}
-            }
-        }
+        seal_fd(raw_fd)?;
 
         let bytes: glib::Bytes = unsafe {
             let mut error = std::ptr::null_mut();
@@ -510,3 +509,28 @@ impl std::fmt::Display for Error {
 impl std::error::Error for Error {}
 
 pub type StdResult<T, E> = std::result::Result<T, E>;
+
+fn seal_fd(fd: impl AsRawFd) -> Result<(), memfd::Error> {
+    let raw_fd = fd.as_raw_fd();
+
+    let mfd = memfd::Memfd::try_from_fd(raw_fd).unwrap();
+    // In rare circumstances the sealing returns a ResourceBusy
+    for i in 0.. {
+        // 🦭
+        let seal = mfd.add_seals(&[
+            memfd::FileSeal::SealShrink,
+            memfd::FileSeal::SealGrow,
+            memfd::FileSeal::SealWrite,
+            memfd::FileSeal::SealSeal,
+        ]);
+
+        match seal {
+            Ok(_) => break,
+            Err(err) if i > 10000 => return Err(err.into()),
+            Err(_) => {}
+        }
+    }
+    mem::forget(mfd);
+
+    Ok(())
+}

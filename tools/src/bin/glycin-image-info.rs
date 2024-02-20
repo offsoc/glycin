@@ -29,8 +29,26 @@ async fn run() -> Result<(), glycin::Error> {
             .cloned()
             .unwrap_or("-".into())
     );
-    println!("exif = {}", info.details.exif.is_some());
-    println!("xmp = {}", info.details.xmp.is_some());
+    println!(
+        "exif = {}",
+        info.details
+            .exif
+            .as_ref()
+            .map_or(String::from("empty"), |x| glib::format_size(
+                x.get_full().unwrap().len() as u64
+            )
+            .to_string())
+    );
+    println!(
+        "xmp = {}",
+        info.details
+            .xmp
+            .as_ref()
+            .map_or(String::from("empty"), |x| glib::format_size(
+                x.get_full().unwrap().len() as u64
+            )
+            .to_string())
+    );
     println!(
         "dimensions_text = {}",
         info.details
@@ -63,6 +81,18 @@ async fn run() -> Result<(), glycin::Error> {
                 .delay
                 .map(|x| format!("{:#?}", x))
                 .unwrap_or("-".into())
+        );
+
+        println!(
+            "iccp = {}",
+            frame
+                .details
+                .iccp
+                .as_ref()
+                .map_or(String::from("empty"), |x| glib::format_size(
+                    x.get_full().unwrap().len() as u64
+                )
+                .to_string())
         );
         println!(
             "bit_depth = {}",

@@ -1,5 +1,5 @@
 use super::{Frame, ImageInfo, MemoryFormat, SharedMemory};
-use crate::{FrameDetails, GenericContexts, LoaderError};
+use crate::{BinaryData, FrameDetails, GenericContexts, LoaderError};
 
 #[derive(Default, Clone, Debug)]
 pub struct Handler {
@@ -54,7 +54,7 @@ impl Handler {
 
         let mut memory = SharedMemory::new(decoder.total_bytes());
         decoder.read_image(&mut memory).context_failed()?;
-        let texture = memory.into_texture();
+        let texture = memory.into_binary_data();
 
         let mut frame = Frame::new(width, height, memory_format, texture)?;
         frame.details = details;
@@ -64,7 +64,7 @@ impl Handler {
 
     pub fn frame_details<'a, T: image::ImageDecoder<'a>>(&self, decoder: &mut T) -> FrameDetails {
         let mut details = FrameDetails {
-            iccp: decoder.icc_profile(),
+            iccp: decoder.icc_profile().map(BinaryData::from),
             ..Default::default()
         };
 

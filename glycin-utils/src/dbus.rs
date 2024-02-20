@@ -1,6 +1,9 @@
+use std::ops::Deref;
+use std::os::fd::AsRawFd;
+use std::sync::Arc;
 use std::time::Duration;
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use zbus::zvariant::{self, DeserializeDict, Optional, SerializeDict, Type};
 
 use crate::error::DimensionTooLargerError;
@@ -49,13 +52,13 @@ impl ImageInfo {
     }
 }
 
-#[derive(DeserializeDict, SerializeDict, Type, Debug, Default, Clone)]
+#[derive(DeserializeDict, SerializeDict, Type, Debug, Clone, Default)]
 #[zvariant(signature = "dict")]
 #[non_exhaustive]
 pub struct ImageInfoDetails {
     pub format_name: Option<String>,
-    pub exif: Option<Vec<u8>>,
-    pub xmp: Option<Vec<u8>>,
+    pub exif: Option<BinaryData>,
+    pub xmp: Option<BinaryData>,
     pub transformations_applied: bool,
     /// Textual description of the image dimensions
     pub dimensions_text: Option<String>,
@@ -70,7 +73,7 @@ pub struct Frame {
     /// Line stride
     pub stride: u32,
     pub memory_format: MemoryFormat,
-    pub texture: Texture,
+    pub texture: BinaryData,
     /// Duration to show frame for animations.
     ///
     /// If the value is not set, the image is not animated.
@@ -89,7 +92,7 @@ impl Frame {
 #[non_exhaustive]
 pub struct FrameDetails {
     /// ICC color profile
-    pub iccp: Option<Vec<u8>>,
+    pub iccp: Option<BinaryData>,
     /// Coding-independent code points (HDR information)
     pub cicp: Option<Vec<u8>>,
     /// Bit depth per channel
@@ -111,7 +114,7 @@ impl Frame {
         width: u32,
         height: u32,
         memory_format: MemoryFormat,
-        texture: Texture,
+        texture: BinaryData,
     ) -> Result<Self, DimensionTooLargerError> {
         let stride = memory_format
             .n_bytes()
@@ -131,9 +134,69 @@ impl Frame {
     }
 }
 
-#[derive(Deserialize, Serialize, Type, Debug)]
-pub enum Texture {
-    MemFd(zvariant::OwnedFd),
+#[derive(zvariant::Type, Debug, Clone)]
+#[zvariant(signature = "h")]
+pub struct BinaryData {
+    pub(crate) memfd: Arc<zvariant::OwnedFd>,
+}
+
+impl Serialize for BinaryData {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        self.memfd.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for BinaryData {
+    fn deserialize<D>(deserializer: D) -> Result<BinaryData, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        Ok(Self {
+            memfd: Arc::new(zvariant::OwnedFd::deserialize(deserializer)?),
+        })
+    }
+}
+
+impl AsRawFd for BinaryData {
+    fn as_raw_fd(&self) -> std::os::unix::prelude::RawFd {
+        self.memfd.as_raw_fd()
+    }
+}
+
+impl AsRawFd for &BinaryData {
+    fn as_raw_fd(&self) -> std::os::unix::prelude::RawFd {
+        self.memfd.as_raw_fd()
+    }
+}
+
+impl BinaryData {
+    /// Get a copy of the binary data
+    pub fn get_full(&self) -> std::io::Result<Vec<u8>> {
+        Ok(self.get()?.to_vec())
+    }
+
+    /// Get a reference to the binary data
+    pub fn get(&self) -> std::io::Result<BinaryDataRef> {
+        Ok(BinaryDataRef {
+            mmap: { unsafe { memmap::MmapOptions::new().map_copy_read_only(&self.memfd)? } },
+        })
+    }
+}
+
+#[derive(Debug)]
+pub struct BinaryDataRef {
+    mmap: memmap::Mmap,
+}
+
+impl Deref for BinaryDataRef {
+    type Target = [u8];
+
+    fn deref(&self) -> &[u8] {
+        self.mmap.deref()
+    }
 }
 
 #[derive(Deserialize, Serialize, Type, Debug, Clone, Copy)]
