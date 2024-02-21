@@ -1,4 +1,3 @@
-use anyhow::Context;
 use gettextrs::gettext;
 
 #[derive(zbus::DBusError, Debug, Clone)]
@@ -23,30 +22,17 @@ impl From<LoaderError> for RemoteError {
     }
 }
 
-#[derive(Debug)]
+#[derive(thiserror::Error, Debug)]
 pub enum LoaderError {
+    #[error("{0}")]
     LoadingError(String),
+    #[error("Internal error while interpreting image")]
     InternalLoaderError,
+    #[error("Unsupported image format: {0}")]
     UnsupportedImageFormat(String),
+    #[error("Dimension too large for system")]
     ConversionTooLargerError,
 }
-
-impl std::fmt::Display for LoaderError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> Result<(), std::fmt::Error> {
-        match self {
-            Self::LoadingError(err) => write!(f, "{err}"),
-            Self::InternalLoaderError => {
-                write!(f, "{}", gettext("Internal error while interpreting image"))
-            }
-            Self::UnsupportedImageFormat(msg) => {
-                write!(f, "{} {msg}", gettext("Unsupported image format: "))
-            }
-            err @ Self::ConversionTooLargerError => err.fmt(f),
-        }
-    }
-}
-
-impl std::error::Error for LoaderError {}
 
 impl From<anyhow::Error> for LoaderError {
     fn from(err: anyhow::Error) -> Self {
@@ -63,7 +49,7 @@ impl From<DimensionTooLargerError> for LoaderError {
 }
 
 pub trait GenericContexts<T> {
-    fn context_failed(self) -> anyhow::Result<T>;
+    fn context_failed(self) -> Result<T, LoaderError>;
     fn context_internal(self) -> Result<T, LoaderError>;
     fn context_unsupported(self, msg: String) -> Result<T, LoaderError>;
 }
@@ -72,8 +58,8 @@ impl<T, E> GenericContexts<T> for Result<T, E>
 where
     E: std::error::Error + Send + Sync + 'static,
 {
-    fn context_failed(self) -> anyhow::Result<T> {
-        self.with_context(|| gettext("Failed to decode image"))
+    fn context_failed(self) -> Result<T, LoaderError> {
+        self.map_err(|err| LoaderError::LoadingError(err.to_string()))
     }
 
     fn context_internal(self) -> Result<T, LoaderError> {
@@ -86,8 +72,8 @@ where
 }
 
 impl<T> GenericContexts<T> for Option<T> {
-    fn context_failed(self) -> anyhow::Result<T> {
-        self.with_context(|| gettext("Failed to decode image"))
+    fn context_failed(self) -> Result<T, LoaderError> {
+        self.ok_or(LoaderError::LoadingError(String::new()))
     }
 
     fn context_internal(self) -> Result<T, LoaderError> {

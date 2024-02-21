@@ -1226,6 +1226,7 @@ dependencies = [
  "memmap2",
  "nix",
  "serde",
+ "thiserror",
  "zbus",
 ]
 
