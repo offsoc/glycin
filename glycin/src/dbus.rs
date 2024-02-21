@@ -176,6 +176,10 @@ impl<'a> DecoderProcess<'a> {
             return Err(Error::StrideTooSmall(format!("{:?}", frame)));
         }
 
+        if frame.width < 1 || frame.height < 1 {
+            return Err(Error::WidgthOrHeightZero(format!("{:?}", frame)));
+        }
+
         if let Some(Ok(icc_profile)) = frame.details.iccp.as_ref().map(|x| x.get()) {
             // Align stride with pixel size if necessary
             let icc_mmap = if frame.stride.srem(frame.memory_format.n_bytes().u32())? != 0 {

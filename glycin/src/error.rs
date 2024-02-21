@@ -39,6 +39,8 @@ pub enum Error {
     TextureTooSmall { texture_size: usize, frame: String },
     #[error("Stride is smaller than possible: {0}")]
     StrideTooSmall(String),
+    #[error("Width or height is zero: {0}")]
+    WidgthOrHeightZero(String),
     #[error("Memfd: {0}")]
     MemFd(Arc<memfd::Error>),
     #[error("Seccomp: {0}")]
