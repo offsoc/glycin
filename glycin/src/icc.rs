@@ -1,6 +1,7 @@
-use crate::Result;
 use glycin_utils::MemoryFormat;
 use memmap::MmapMut;
+
+use crate::Result;
 
 pub fn apply_transformation(
     iccp: &[u8],

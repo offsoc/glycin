@@ -122,7 +122,7 @@ impl LoaderImplementation for ImgDecoder {
         _details: InitializationDetails,
     ) -> Result<ImageInfo, LoaderError> {
         let mut buf = Vec::new();
-        internal_error_context!(stream.read_to_end(&mut buf))?;
+        stream.read_to_end(&mut buf).internal_error()?;
         let data = Cursor::new(buf);
 
         let mut format = ImageRsFormat::create(data.clone(), &mime_type)?;
@@ -147,7 +147,7 @@ impl LoaderImplementation for ImgDecoder {
 
     fn frame(&self, _frame_request: FrameRequest) -> Result<Frame, LoaderError> {
         let frame = if let Some(decoder) = std::mem::take(&mut *self.format.lock().unwrap()) {
-            error_context!(decoder.frame())?
+            decoder.frame().loading_error()?
         } else if let Some((ref thread, ref recv)) = *self.thread.lock().unwrap() {
             thread.thread().unpark();
             recv.recv().unwrap()
@@ -183,86 +183,86 @@ pub struct ImageRsFormat<T: std::io::Read + std::io::Seek> {
 impl ImageRsFormat<Reader> {
     fn create(data: Reader, mime_type: &str) -> Result<Self, LoaderError> {
         Ok(match mime_type {
-            "image/bmp" => Self::new(ImageRsDecoder::Bmp(error_context!(
-                codecs::bmp::BmpDecoder::new(data)
-            )?))
+            "image/bmp" => Self::new(ImageRsDecoder::Bmp(
+                codecs::bmp::BmpDecoder::new(data).loading_error()?,
+            ))
             .format_name("BMP")
             .default_bit_depth(8),
-            "image/x-dds" => Self::new(ImageRsDecoder::Dds(error_context!(
-                codecs::dds::DdsDecoder::new(data)
-            )?))
+            "image/x-dds" => Self::new(ImageRsDecoder::Dds(
+                codecs::dds::DdsDecoder::new(data).loading_error()?,
+            ))
             .format_name("DDS")
             .supports_two_grayscale_modes(true),
-            "image/x-ff" => Self::new(ImageRsDecoder::Farbfeld(error_context!(
-                codecs::farbfeld::FarbfeldDecoder::new(data)
-            )?))
+            "image/x-ff" => Self::new(ImageRsDecoder::Farbfeld(
+                codecs::farbfeld::FarbfeldDecoder::new(data).loading_error()?,
+            ))
             .format_name("Farbfeld")
             .default_bit_depth(16),
-            "image/gif" => Self::new(ImageRsDecoder::Gif(error_context!(
-                codecs::gif::GifDecoder::new(data)
-            )?))
+            "image/gif" => Self::new(ImageRsDecoder::Gif(
+                codecs::gif::GifDecoder::new(data).loading_error()?,
+            ))
             .format_name("GIF")
             .default_bit_depth(8),
-            "image/vnd.microsoft.icon" => Self::new(ImageRsDecoder::Ico(error_context!(
-                codecs::ico::IcoDecoder::new(data)
-            )?))
+            "image/vnd.microsoft.icon" => Self::new(ImageRsDecoder::Ico(
+                codecs::ico::IcoDecoder::new(data).loading_error()?,
+            ))
             .format_name("ICO"),
-            "image/jpeg" => Self::new(ImageRsDecoder::Jpeg(error_context!(
-                codecs::jpeg::JpegDecoder::new(data)
-            )?))
+            "image/jpeg" => Self::new(ImageRsDecoder::Jpeg(
+                codecs::jpeg::JpegDecoder::new(data).loading_error()?,
+            ))
             .format_name("JPEG")
             .default_bit_depth(8)
             .supports_two_grayscale_modes(true),
-            "image/x-exr" => Self::new(ImageRsDecoder::OpenExr(error_context!(
-                codecs::openexr::OpenExrDecoder::new(data)
-            )?))
+            "image/x-exr" => Self::new(ImageRsDecoder::OpenExr(
+                codecs::openexr::OpenExrDecoder::new(data).loading_error()?,
+            ))
             .format_name("OpenEXR")
             .default_bit_depth(32)
             .supports_two_grayscale_modes(true),
-            "image/png" => Self::new(ImageRsDecoder::Png(error_context!(
-                codecs::png::PngDecoder::new(data)
-            )?))
+            "image/png" => Self::new(ImageRsDecoder::Png(
+                codecs::png::PngDecoder::new(data).loading_error()?,
+            ))
             .format_name("PNG")
             .supports_two_alpha_modes(true)
             .supports_two_grayscale_modes(true)
             .default_bit_depth(8),
-            "image/x-portable-bitmap" => Self::new(ImageRsDecoder::Pnm(error_context!(
-                codecs::pnm::PnmDecoder::new(data)
-            )?))
+            "image/x-portable-bitmap" => Self::new(ImageRsDecoder::Pnm(
+                codecs::pnm::PnmDecoder::new(data).loading_error()?,
+            ))
             .format_name("PBM")
             .default_bit_depth(1),
-            "image/x-portable-graymap" => Self::new(ImageRsDecoder::Pnm(error_context!(
-                codecs::pnm::PnmDecoder::new(data)
-            )?))
+            "image/x-portable-graymap" => Self::new(ImageRsDecoder::Pnm(
+                codecs::pnm::PnmDecoder::new(data).loading_error()?,
+            ))
             .format_name("PGM"),
-            "image/x-portable-pixmap" => Self::new(ImageRsDecoder::Pnm(error_context!(
-                codecs::pnm::PnmDecoder::new(data)
-            )?))
+            "image/x-portable-pixmap" => Self::new(ImageRsDecoder::Pnm(
+                codecs::pnm::PnmDecoder::new(data).loading_error()?,
+            ))
             .format_name("PPM"),
-            "image/x-portable-anymap" => Self::new(ImageRsDecoder::Pnm(error_context!(
-                codecs::pnm::PnmDecoder::new(data)
-            )?))
+            "image/x-portable-anymap" => Self::new(ImageRsDecoder::Pnm(
+                codecs::pnm::PnmDecoder::new(data).loading_error()?,
+            ))
             .format_name("PAM"),
-            "image/x-qoi" => Self::new(ImageRsDecoder::Qoi(error_context!(
-                codecs::qoi::QoiDecoder::new(data)
-            )?))
+            "image/x-qoi" => Self::new(ImageRsDecoder::Qoi(
+                codecs::qoi::QoiDecoder::new(data).loading_error()?,
+            ))
             .format_name("QOI")
             .default_bit_depth(8)
             .supports_two_alpha_modes(true),
-            "image/x-targa" | "image/x-tga" => Self::new(ImageRsDecoder::Tga(error_context!(
-                codecs::tga::TgaDecoder::new(data)
-            )?))
+            "image/x-targa" | "image/x-tga" => Self::new(ImageRsDecoder::Tga(
+                codecs::tga::TgaDecoder::new(data).loading_error()?,
+            ))
             .format_name("TGA")
             .supports_two_grayscale_modes(true),
-            "image/tiff" => Self::new(ImageRsDecoder::Tiff(error_context!(
-                codecs::tiff::TiffDecoder::new(data)
-            )?))
+            "image/tiff" => Self::new(ImageRsDecoder::Tiff(
+                codecs::tiff::TiffDecoder::new(data).loading_error()?,
+            ))
             .format_name("TIFF")
             .supports_two_alpha_modes(true)
             .supports_two_grayscale_modes(true),
-            "image/webp" => Self::new(ImageRsDecoder::WebP(error_context!(
-                codecs::webp::WebPDecoder::new(data)
-            )?))
+            "image/webp" => Self::new(ImageRsDecoder::WebP(
+                codecs::webp::WebPDecoder::new(data).loading_error()?,
+            ))
             .format_name("WebP")
             .default_bit_depth(8)
             .supports_two_alpha_modes(true),

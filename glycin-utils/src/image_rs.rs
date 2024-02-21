@@ -1,5 +1,5 @@
 use super::{Frame, ImageInfo, MemoryFormat, SharedMemory};
-use crate::{error_context, BinaryData, FrameDetails, GenericContexts, LoaderError};
+use crate::{BinaryData, FrameDetails, GenericContexts, LoaderError};
 
 #[derive(Default, Clone, Debug)]
 pub struct Handler {
@@ -53,7 +53,7 @@ impl Handler {
         let (width, height) = decoder.dimensions();
 
         let mut memory = SharedMemory::new(decoder.total_bytes());
-        error_context!(decoder.read_image(&mut memory))?;
+        decoder.read_image(&mut memory).loading_error()?;
         let texture = memory.into_binary_data();
 
         let mut frame = Frame::new(width, height, memory_format, texture)?;

@@ -23,12 +23,12 @@ impl LoaderImplementation for ImgDecoder {
         _details: InitializationDetails,
     ) -> Result<ImageInfo, LoaderError> {
         let mut data = Vec::new();
-        let total_size = internal_error_context!(stream.read_to_end(&mut data))?;
+        let total_size = stream.read_to_end(&mut data).internal_error()?;
 
         let stream_reader = StreamReader::new(Cursor::new(data), total_size.try_u64()?);
-        let context = error_context!(HeifContext::read_from_reader(Box::new(stream_reader)))?;
+        let context = HeifContext::read_from_reader(Box::new(stream_reader)).loading_error()?;
 
-        let handle = error_context!(context.primary_image_handle())?;
+        let handle = context.primary_image_handle().loading_error()?;
 
         let format_name = match mime_type.as_str() {
             "image/heif" => "HEIC",
@@ -49,13 +49,13 @@ impl LoaderImplementation for ImgDecoder {
     }
 
     fn frame(&self, _frame_request: FrameRequest) -> Result<Frame, LoaderError> {
-        let context = internal_error_context!(std::mem::take(&mut *self.decoder.lock().unwrap()))?;
+        let context = std::mem::take(&mut *self.decoder.lock().unwrap()).loading_error()?;
         decode(context, self.mime_type.get().unwrap())
     }
 }
 
 fn decode(context: HeifContext, mime_type: &str) -> Result<Frame, LoaderError> {
-    let handle = error_context!(context.primary_image_handle())?;
+    let handle = context.primary_image_handle().loading_error()?;
 
     let rgb_chroma = if handle.luma_bits_per_pixel() > 8 {
         if handle.has_alpha_channel() {
@@ -90,7 +90,7 @@ fn decode(context: HeifContext, mime_type: &str) -> Result<Frame, LoaderError> {
         Err(err) if matches!(err.sub_code, libheif_rs::HeifErrorSubCode::UnsupportedCodec) => {
             return Err(LoaderError::UnsupportedImageFormat(mime_type.to_string()));
         }
-        image => error_context!(image)?,
+        image => image.loading_error()?,
     };
 
     let icc_profile = if let Some(profile) = handle.color_profile_raw() {
@@ -108,7 +108,7 @@ fn decode(context: HeifContext, mime_type: &str) -> Result<Frame, LoaderError> {
         None
     };
 
-    let plane = error_context!(image.planes_mut().interleaved)?;
+    let plane = image.planes_mut().interleaved.loading_error()?;
 
     let memory_format = match rgb_chroma {
         RgbChroma::HdrRgbBe | RgbChroma::HdrRgbaBe | RgbChroma::HdrRgbLe | RgbChroma::HdrRgbaLe => {
