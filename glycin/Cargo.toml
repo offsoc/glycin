@@ -31,6 +31,7 @@ libseccomp = "0.3.0"
 memfd = "0.6.3"
 memmap = { package = "memmap2", version = "0.9.0" }
 nix = { version = "0.27.0", features = ["fs", "resource", "signal"] }
+thiserror = "1.0.57"
 tokio = { version = "1.35.1", optional = true }
 zbus = { version = "4.0.0", features = ["p2p"] }
 

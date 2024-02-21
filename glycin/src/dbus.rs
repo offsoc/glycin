@@ -82,8 +82,8 @@ impl<'a> DecoderProcess<'a> {
                 Err(glib::Error::from(gio::Cancelled).into())
             },
             return_status = spawn_blocking(move || subprocess.wait()).fuse() => match return_status {
-                Ok(status) => Err(Error::PrematureExit(status, command_dbg)),
-                Err(err) => Err(Error::StdIoError(err.into(), command_dbg)),
+                Ok(status) => Err(Error::PrematureExit { status, cmd: command_dbg }),
+                Err(err) => Err(Error::StdIoError{ err: err.into(), info: command_dbg }),
             }
         }?;
 

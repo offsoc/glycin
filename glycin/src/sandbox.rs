@@ -205,9 +205,10 @@ impl Sandbox {
         }
 
         let command_dbg = format!("{:?}", command);
-        let child = command
-            .spawn()
-            .map_err(|err| Error::SpawnError(command_dbg.clone(), Arc::new(err)))?;
+        let child = command.spawn().map_err(|err| Error::SpawnError {
+            cmd: command_dbg.clone(),
+            err: Arc::new(err),
+        })?;
 
         Ok(SpawnedSandbox {
             child,

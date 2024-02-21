@@ -6,21 +6,41 @@ use gdk::glib;
 use glycin_utils::{DimensionTooLargerError, RemoteError};
 use libseccomp::error::SeccompError;
 
-pub type StdResult<T, E> = std::result::Result<T, E>;
+use crate::MimeType;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, thiserror::Error)]
 pub enum Error {
-    RemoteError(RemoteError),
-    GLibError(glib::Error),
-    StdIoError(Arc<std::io::Error>, String),
+    #[error("Remote error: {0}")]
+    RemoteError(#[from] RemoteError),
+    #[error("GLib error: {0}")]
+    GLibError(#[from] glib::Error),
+    #[error("IO error: {err} {info}")]
+    StdIoError {
+        err: Arc<std::io::Error>,
+        info: String,
+    },
+    #[error("D-Bus error: {0}")]
+    DbusError(#[from] zbus::Error),
+    #[error("Internal communication was unexpectedly canceled")]
     InternalCommunicationCanceled,
-    UnknownImageFormat(String),
-    PrematureExit(ExitStatus, String),
+    #[error("Unknown image format: {0}")]
+    UnknownImageFormat(MimeType),
+    #[error("Loader process exited early with status '{}'. {cmd}", .status.code().unwrap_or_default())]
+    PrematureExit { status: ExitStatus, cmd: String },
+    #[error("Conversion too large")]
     ConversionTooLargerError,
-    SpawnError(String, Arc<std::io::Error>),
+    #[error("Could not spawn `{cmd}`: {err}")]
+    SpawnError {
+        cmd: String,
+        err: Arc<std::io::Error>,
+    },
+    #[error("Texture is only {texture_size} but was announced differently: {frame}")]
     TextureTooSmall { texture_size: usize, frame: String },
+    #[error("Stride is smaller than possible: {0}")]
     StrideTooSmall(String),
+    #[error("Memfd: {0}")]
     MemFd(Arc<memfd::Error>),
+    #[error("Seccomp: {0}")]
     Seccomp(Arc<SeccompError>),
 }
 
@@ -34,21 +54,12 @@ impl Error {
     }
 }
 
-impl From<RemoteError> for Error {
-    fn from(err: RemoteError) -> Self {
-        Self::RemoteError(err)
-    }
-}
-
-impl From<glib::Error> for Error {
-    fn from(err: glib::Error) -> Self {
-        Self::GLibError(err)
-    }
-}
-
 impl From<std::io::Error> for Error {
     fn from(err: std::io::Error) -> Self {
-        Self::StdIoError(Arc::new(err), String::new())
+        Self::StdIoError {
+            err: Arc::new(err),
+            info: String::new(),
+        }
     }
 }
 
@@ -70,51 +81,8 @@ impl From<oneshot::Canceled> for Error {
     }
 }
 
-impl From<zbus::Error> for Error {
-    fn from(err: zbus::Error) -> Self {
-        Self::RemoteError(RemoteError::ZBus(err))
-    }
-}
-
 impl From<DimensionTooLargerError> for Error {
     fn from(_err: DimensionTooLargerError) -> Self {
         Self::ConversionTooLargerError
     }
 }
-
-impl std::fmt::Display for Error {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> StdResult<(), std::fmt::Error> {
-        match self {
-            Self::RemoteError(err) => write!(f, "{err}"),
-            Self::GLibError(err) => write!(f, "{err}"),
-            Self::StdIoError(err, info) => write!(f, "{err} {info}"),
-            Self::InternalCommunicationCanceled => {
-                write!(f, "Internal communication was unexpectedly canceled")
-            }
-            Self::UnknownImageFormat(mime_type) => {
-                write!(f, "Unknown image format: {mime_type}")
-            }
-            Self::PrematureExit(status, command) => {
-                write!(
-                    f,
-                    "Loader process exited early with status '{}'. {command}",
-                    status.code().unwrap_or_default()
-                )
-            }
-            err @ Self::ConversionTooLargerError => err.fmt(f),
-            Self::SpawnError(cmd, err) => write!(f, "Could not spawn `{cmd}`: {err}"),
-            Self::TextureTooSmall {
-                texture_size,
-                frame,
-            } => write!(
-                f,
-                "Texture is only {texture_size} but was announced differently: {frame}"
-            ),
-            Self::StrideTooSmall(frame) => write!(f, "Stride is smaller than possible: {frame}"),
-            Self::MemFd(err) => write!(f, "Memfd: {err}"),
-            Self::Seccomp(err) => write!(f, "Seccomp: {err}"),
-        }
-    }
-}
-
-impl std::error::Error for Error {}

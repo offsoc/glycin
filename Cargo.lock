@@ -1170,6 +1170,7 @@ dependencies = [
  "memfd",
  "memmap2",
  "nix",
+ "thiserror",
  "tokio",
  "zbus",
 ]
