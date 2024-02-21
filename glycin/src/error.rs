@@ -9,6 +9,7 @@ use libseccomp::error::SeccompError;
 use crate::MimeType;
 
 #[derive(Debug, Clone, thiserror::Error)]
+#[non_exhaustive]
 pub enum Error {
     #[error("Remote error: {0}")]
     RemoteError(#[from] RemoteError),

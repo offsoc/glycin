@@ -1,5 +1,6 @@
 #[derive(zbus::DBusError, Debug, Clone)]
 #[zbus(prefix = "org.gnome.glycin.Error")]
+#[non_exhaustive]
 pub enum RemoteError {
     #[zbus(error)]
     ZBus(zbus::Error),
@@ -29,6 +30,7 @@ impl From<LoaderError> for RemoteError {
 }
 
 #[derive(thiserror::Error, Debug)]
+#[non_exhaustive]
 pub enum LoaderError {
     #[error("{0}")]
     LoadingError(String),
