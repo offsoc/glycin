@@ -6,7 +6,7 @@ use std::sync::OnceLock;
 use futures_util::StreamExt;
 use gio::glib;
 
-use crate::dbus::Error;
+use crate::Error;
 
 pub type MimeType = String;
 

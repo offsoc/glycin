@@ -7,10 +7,9 @@ use gio::prelude::*;
 pub use glycin_utils::FrameDetails;
 use glycin_utils::ImageInfo;
 
-use crate::config;
 pub use crate::config::MimeType;
-pub use crate::dbus::Error;
 use crate::dbus::*;
+use crate::{config, Error};
 
 static IS_FLATPAKED: OnceLock<bool> = OnceLock::new();
 
@@ -146,7 +145,7 @@ pub struct Image<'a> {
     process: DecoderProcess<'a>,
     info: ImageInfo,
     mime_type: MimeType,
-    active_sandbox_mechanism: SandboxMechanism
+    active_sandbox_mechanism: SandboxMechanism,
 }
 
 impl<'a> Image<'a> {

@@ -32,9 +32,11 @@
 mod api;
 mod config;
 mod dbus;
+mod error;
 mod icc;
 mod sandbox;
 
 pub use api::*;
 pub use config::COMPAT_VERSION;
+pub use error::Error;
 pub use glycin_utils::{ImageInfo, ImageInfoDetails, RemoteError};
