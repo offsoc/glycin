@@ -3,7 +3,6 @@ use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::Mutex;
 
 use gio::prelude::*;
-use glycin_utils::anyhow::Context;
 use glycin_utils::*;
 
 /// Current librsvg limit on maximum dimensions. See
@@ -79,19 +78,17 @@ pub fn render(renderer: &rsvg::CairoRenderer, instr: Instruction) -> Result<Fram
     )
     .unwrap();
 
-    let context = cairo::Context::new(&surface).context("Failed to create new cairo context")?;
+    let context = error_context!(cairo::Context::new(&surface))?;
 
-    renderer
-        .render_document(
-            &context,
-            &cairo::Rectangle::new(
-                -area.x(),
-                -area.y(),
-                total_width as f64,
-                total_height as f64,
-            ),
-        )
-        .context("Failed to render image")?;
+    error_context!(renderer.render_document(
+        &context,
+        &cairo::Rectangle::new(
+            -area.x(),
+            -area.y(),
+            total_width as f64,
+            total_height as f64,
+        ),
+    ))?;
 
     drop(context);
 
@@ -99,10 +96,7 @@ pub fn render(renderer: &rsvg::CairoRenderer, instr: Instruction) -> Result<Fram
     let height = surface.height();
     let stride = surface.stride() as usize;
 
-    let data = surface
-        .take_data()
-        .context("Cairo surface already taken")?
-        .to_vec();
+    let data = internal_error_context!(surface.take_data())?.to_vec();
 
     let mut memory = SharedMemory::new(data.len().try_u64()?);
 
@@ -151,7 +145,7 @@ impl LoaderImplementation for ImgDecoder {
 
     fn frame(&self, frame_request: FrameRequest) -> Result<Frame, LoaderError> {
         let lock = self.thread.lock().unwrap();
-        let thread = lock.as_ref().context_internal()?;
+        let thread = internal_error_context!(lock.as_ref())?;
 
         let image_info = &thread.image_info;
         let width = image_info.width;

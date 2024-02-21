@@ -5,7 +5,6 @@ use std::os::raw::{c_int, c_void};
 use std::os::unix::net::UnixStream;
 use std::sync::Mutex;
 
-pub use anyhow;
 use nix::libc::{c_uint, siginfo_t};
 
 use crate::dbus::*;
@@ -115,7 +114,11 @@ impl Loader {
         let image_info = self
             .decoder
             .lock()
-            .or(Err(RemoteError::InternalLoaderError))?
+            .or_else(|err| {
+                Err(RemoteError::InternalLoaderError(format!(
+                    "Failed to lock decoder for init(): {err}"
+                )))
+            })?
             .init(stream, init_request.mime_type, init_request.details)?;
 
         Ok(image_info)
@@ -124,7 +127,11 @@ impl Loader {
     async fn frame(&self, frame_request: FrameRequest) -> Result<Frame, RemoteError> {
         self.decoder
             .lock()
-            .or(Err(RemoteError::InternalLoaderError))?
+            .or_else(|err| {
+                Err(RemoteError::InternalLoaderError(format!(
+                    "Failed to lock decoder for frame(): {err}"
+                )))
+            })?
             .frame(frame_request)
             .map_err(Into::into)
     }

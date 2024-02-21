@@ -27,10 +27,10 @@ impl LoaderImplementation for ImgDecoder {
         _details: InitializationDetails,
     ) -> Result<ImageInfo, LoaderError> {
         let mut data = Vec::new();
-        stream.read_to_end(&mut data).context_failed()?;
+        error_context!(stream.read_to_end(&mut data))?;
         let (info, iccp, exif) = basic_info(&data);
 
-        let info = info.context_failed()?;
+        let info = error_context!(info)?;
 
         let mut image_info = ImageInfo::new(info.xsize, info.ysize);
         image_info.details.format_name = Some(String::from("JPEG XL"));
@@ -43,34 +43,26 @@ impl LoaderImplementation for ImgDecoder {
     }
 
     fn frame(&self, _frame_request: FrameRequest) -> Result<Frame, LoaderError> {
-        let Some((data, iccp)) = std::mem::take(&mut *self.decoder.lock().unwrap()) else {
-            return Err(LoaderError::InternalLoaderError);
-        };
+        let (data, iccp) =
+            internal_error_context!(std::mem::take(&mut *self.decoder.lock().unwrap()))?;
 
-        let decoder = jpegxl_rs::decode::decoder_builder()
-            .build()
-            .context_failed()?;
+        let decoder = error_context!(jpegxl_rs::decode::decoder_builder().build())?;
 
-        let image = decoder
-            .decode_to_image(&data)
-            .context_failed()?
-            .context_failed()?;
+        let image = error_context!(error_context!(decoder.decode_to_image(&data))?)?;
 
         let memory_format = MemoryFormat::from(image.color());
         let (alpha_channel, grayscale, bits) =
-            image_rs::channel_details(image.color().into()).context_internal()?;
+            internal_error_context!(image_rs::channel_details(image.color().into()))?;
         let width = image.width();
         let height = image.height();
 
         let bytes = image.into_bytes();
         let mut memory = SharedMemory::new(bytes.len() as u64);
 
-        Cursor::new(memory.as_mut())
-            .write_all(&bytes)
-            .context_internal()?;
+        internal_error_context!(Cursor::new(memory.as_mut()).write_all(&bytes))?;
         let texture = memory.into_binary_data();
 
-        let mut frame = Frame::new(width, height, memory_format, texture).context_failed()?;
+        let mut frame = error_context!(Frame::new(width, height, memory_format, texture))?;
 
         frame.details.iccp = iccp.map(BinaryData::from);
 
