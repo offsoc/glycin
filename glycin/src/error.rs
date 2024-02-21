@@ -42,6 +42,8 @@ pub enum Error {
     MemFd(Arc<memfd::Error>),
     #[error("Seccomp: {0}")]
     Seccomp(Arc<SeccompError>),
+    #[error("ICC profile: {0}")]
+    IccProfile(#[from] lcms2::Error),
 }
 
 impl Error {

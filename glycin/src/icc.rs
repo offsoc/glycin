@@ -1,3 +1,4 @@
+use crate::Result;
 use glycin_utils::MemoryFormat;
 use memmap::MmapMut;
 
@@ -5,7 +6,7 @@ pub fn apply_transformation(
     iccp: &[u8],
     memory_format: MemoryFormat,
     mut mmap: MmapMut,
-) -> anyhow::Result<()> {
+) -> Result<()> {
     let result = transform(iccp, memory_format, &mut mmap).map_err(Into::into);
     drop(mmap);
     result
@@ -15,7 +16,7 @@ fn transform(
     icc_profile: &[u8],
     memory_format: MemoryFormat,
     buf: &mut [u8],
-) -> Result<(), lcms2::Error> {
+) -> std::result::Result<(), lcms2::Error> {
     let icc_pixel_format = lcms_pixel_format(memory_format);
     let src_profile = lcms2::Profile::new_icc(icc_profile)?;
     let target_profile = if memory_format.n_channels() > 2 {

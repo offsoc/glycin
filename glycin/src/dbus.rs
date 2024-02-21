@@ -210,7 +210,7 @@ impl<'a> DecoderProcess<'a> {
             };
 
             let memory_format = frame.memory_format;
-            let icc_result: Result<(), anyhow::Error> = spawn_blocking(move || {
+            let icc_result = spawn_blocking(move || {
                 crate::icc::apply_transformation(&icc_profile, memory_format, icc_mmap)
             })
             .await;

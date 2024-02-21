@@ -15,7 +15,6 @@ rust-version.workspace = true
 tokio = ["dep:tokio", "zbus/tokio"]
 
 [dependencies]
-anyhow = { version = "1.0.71", features = ["backtrace"] }
 async-fs = "2.1.0"
 async-global-executor = "2.4.1"
 async-lock = "3.3.0"

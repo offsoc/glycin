@@ -11,7 +11,7 @@ fn main() {
     let _ = async_global_executor::block_on(render(&path));
 }
 
-async fn render<P>(path: P) -> anyhow::Result<()>
+async fn render<P>(path: P) -> Result<(), Box<dyn std::error::Error>>
 where
     P: AsRef<std::path::Path>,
 {
