@@ -204,8 +204,8 @@ impl FrameRequest {
     }
 }
 
-/// Returns a list of mime types for the supported image formats
-pub async fn image_formats() -> Vec<MimeType> {
+/// Returns a list of mime types for which loaders are configured
+pub async fn supported_mime_types() -> Vec<MimeType> {
     config::Config::cached()
         .await
         .image_decoders
