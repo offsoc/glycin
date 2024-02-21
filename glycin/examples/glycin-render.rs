@@ -16,7 +16,7 @@ where
     P: AsRef<std::path::Path>,
 {
     let file = gio::File::for_path(path);
-    let image = Loader::new(file).request().await.expect("request failed");
+    let image = Loader::new(file).load().await.expect("request failed");
     let frame = image.next_frame().await.expect("next frame failed");
 
     frame.texture.save_to_png("output.png")?;

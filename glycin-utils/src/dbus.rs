@@ -90,6 +90,7 @@ impl Frame {
 #[derive(DeserializeDict, SerializeDict, Type, Debug, Default, Clone)]
 #[zvariant(signature = "dict")]
 #[non_exhaustive]
+/// More information about a frame
 pub struct FrameDetails {
     /// ICC color profile
     pub iccp: Option<BinaryData>,

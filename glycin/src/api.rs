@@ -51,6 +51,7 @@ pub struct Loader {
 }
 
 impl Loader {
+    /// Create a new loader
     pub fn new(file: gio::File) -> Self {
         Self {
             file,
@@ -59,17 +60,25 @@ impl Loader {
         }
     }
 
+    /// Change the sandbox mechanism
+    ///
+    /// The default without calling this function is to automatically select a
+    /// sandbox mechanism. The sandbox is never disabled automatically.
+    /// Passing [`None`](Option::None) selects the automatic sandbox
+    /// selection mechanism selection.
     pub fn sandbox_mechanism(&mut self, sandbox_mechanism: Option<SandboxMechanism>) -> &mut Self {
         self.sandbox_mechanism = sandbox_mechanism;
         self
     }
 
+    /// Set [`Cancellable`](gio::Cancellable) to cancel any loader operations
     pub fn cancellable(&mut self, cancellable: impl IsA<gio::Cancellable>) -> &mut Self {
         self.cancellable = cancellable.upcast();
         self
     }
 
-    pub async fn request<'a>(self) -> Result<Image<'a>> {
+    /// Load basic image information and enable further operations
+    pub async fn load<'a>(self) -> Result<Image<'a>> {
         let config = config::Config::cached().await;
 
         let gfile_worker = GFileWorker::spawn(self.file.clone(), self.cancellable.clone());
@@ -102,8 +111,9 @@ impl Loader {
         Ok(Image {
             process,
             info,
-            request: self,
+            loader: self,
             mime_type,
+            active_sandbox_mechanism: sandbox_mechanism,
         })
     }
 
@@ -132,13 +142,19 @@ impl Loader {
 /// Image handle containing metadata and allowing frame requests
 #[derive(Debug)]
 pub struct Image<'a> {
-    request: Loader,
+    loader: Loader,
     process: DecoderProcess<'a>,
     info: ImageInfo,
     mime_type: MimeType,
+    active_sandbox_mechanism: SandboxMechanism
 }
 
 impl<'a> Image<'a> {
+    /// Loads next frame
+    ///
+    /// Loads texture and information of the next frame. For single still
+    /// images, this can only be called once. For animated images, this
+    /// function will loop to the first frame, when the last frame is reached.
     pub async fn next_frame(&self) -> Result<Frame> {
         self.process
             .decode_frame(glycin_utils::FrameRequest::default())
@@ -146,6 +162,10 @@ impl<'a> Image<'a> {
             .map_err(Into::into)
     }
 
+    /// Loads a specific frame
+    ///
+    /// Loads a specific frame from the file. Loaders can ignore parts of the
+    /// instructions in the `FrameRequest`.
     pub async fn specific_frame(&self, frame_request: FrameRequest) -> Result<Frame> {
         self.process
             .decode_frame(frame_request.request)
@@ -153,20 +173,34 @@ impl<'a> Image<'a> {
             .map_err(Into::into)
     }
 
+    /// Returns already obtained info
     pub fn info(&self) -> &ImageInfo {
         &self.info
     }
 
+    /// Returns detected MIME type of the file
     pub fn mime_type(&self) -> MimeType {
         self.mime_type.clone()
     }
 
+    /// A textual representation of the image format
     pub fn format_name(&self) -> Option<String> {
         self.info().details.format_name.as_ref().cloned()
     }
 
-    pub fn request(&self) -> &Loader {
-        &self.request
+    /// File the image was loaded from
+    pub fn file(&self) -> gio::File {
+        self.loader.file.clone()
+    }
+
+    /// [`Cancellable`](gio::Cancellable) to cancel operations within this image
+    pub fn cancellable(&self) -> gio::Cancellable {
+        self.loader.cancellable.clone()
+    }
+
+    /// Active sandbox mechanis
+    pub fn active_sandbox_mechanism(&self) -> SandboxMechanism {
+        self.active_sandbox_mechanism.clone()
     }
 }
 
@@ -176,14 +210,20 @@ impl Drop for Loader {
     }
 }
 
+/// A frame of an image often being the complete image
+#[derive(Debug, Clone)]
 pub struct Frame {
     pub texture: gdk::Texture,
+    /// Duration to show frame for animations.
+    ///
+    /// If the value is not set, the image is not animated.
     pub delay: Option<std::time::Duration>,
     pub details: FrameDetails,
 }
 
 #[derive(Default, Debug)]
 #[must_use]
+/// Request information to get a specific frame
 pub struct FrameRequest {
     request: glycin_utils::FrameRequest,
 }
@@ -221,7 +261,7 @@ mod test {
     fn ensure_futures_are_send() {
         gio::glib::spawn_future(async {
             let loader = Loader::new(gio::File::for_uri("invalid"));
-            let image = loader.request().await.unwrap();
+            let image = loader.load().await.unwrap();
             image.next_frame().await.unwrap();
         });
     }
