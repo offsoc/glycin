@@ -2,7 +2,11 @@
 
 - api: Rename a few functions
 - api: Use memfds for larger metadata like Exif or ICC profiles
+- glycin/glycin-utils: Drop all uses of anyhow
+- glycin/glycin-utils: Use thiserror to define types
+- glycin: Check image width and height are not zero
 - loaders/image-rs: Disable memory limits since we have our own
+- loaders: Use new error utils tracking code location
 
 ## 1.0.beta.1
 
