@@ -1,3 +1,8 @@
+## 1.0.rc
+
+- glycin: Allow fstat syscall
+- jxl: Allow libjxl 0.10 as well
+
 ## 1.0.beta.2
 
 - api: Rename a few functions

@@ -49,6 +49,7 @@ const ALLOWED_SYSCALLS: &[&str] = &[
     "fcntl",
     "fcntl",
     "fcntl64",
+    "fstat",
     "ftruncate",
     "futex",
     "futex_time64",
