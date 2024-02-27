@@ -12,7 +12,7 @@ if 'glycin-heif' in get_option('loaders')
 endif
 
 if 'glycin-jxl' in get_option('loaders')
-  dependency('libjxl', version: ['>= 0.8.2', '< 0.10.0'])
+  dependency('libjxl', version: ['>= 0.8.2', '< 0.11.0'])
 endif
 
 if 'glycin-svg' in get_option('loaders')
