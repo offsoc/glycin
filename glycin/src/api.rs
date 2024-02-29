@@ -125,7 +125,10 @@ impl Loader {
         // Prefer file extension for TIFF since it can be a RAW format as well
         let is_tiff = mime_type.clone().ok() == Some("image/tiff".into());
 
-        if unsure || is_tiff {
+        // Prefer file extension for XML since long comment between `<?xml` and `<svg>` can falsely guess XML instead of SVG
+        let is_xml = mime_type.clone().ok() == Some("application/xml".into());
+
+        if unsure || is_tiff || is_xml {
             if let Some(filename) = gfile_worker.file().basename() {
                 let content_type_fn = gio::content_type_guess(Some(filename), &head).0;
                 return gio::content_type_get_mime_type(&content_type_fn)

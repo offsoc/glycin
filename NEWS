@@ -1,6 +1,7 @@
 ## 1.0.rc
 
 - glycin: Allow fstat syscall
+- glycin: Treat files detected as XML as SVG if they have .svg file ending #48
 - jxl: Allow libjxl 0.10 as well
 
 ## 1.0.beta.2
