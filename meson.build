@@ -1,7 +1,7 @@
 project(
     'glycin-loaders',
     'rust',
-    version: '1.0.beta.2',
+    version: '1.0.rc',
     meson_version: '>=0.57',
 )
 
