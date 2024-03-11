@@ -34,7 +34,7 @@ impl Handler {
         self
     }
 
-    pub fn info<'a, T: image::ImageDecoder<'a>>(&self, decoder: &mut T) -> ImageInfo {
+    pub fn info(&self, decoder: &mut impl image::ImageDecoder) -> ImageInfo {
         let (width, height) = decoder.dimensions();
         let mut info = ImageInfo::new(width, height);
         info.details.format_name = self.format_name.clone();
@@ -42,10 +42,7 @@ impl Handler {
         info
     }
 
-    pub fn frame<'a, T: image::ImageDecoder<'a>>(
-        &self,
-        mut decoder: T,
-    ) -> Result<Frame, LoaderError> {
+    pub fn frame(&self, mut decoder: impl image::ImageDecoder) -> Result<Frame, LoaderError> {
         let details = self.frame_details(&mut decoder);
         let color_type = decoder.color_type();
 
@@ -62,9 +59,9 @@ impl Handler {
         Ok(frame)
     }
 
-    pub fn frame_details<'a, T: image::ImageDecoder<'a>>(&self, decoder: &mut T) -> FrameDetails {
+    pub fn frame_details(&self, decoder: &mut impl image::ImageDecoder) -> FrameDetails {
         let mut details = FrameDetails {
-            iccp: decoder.icc_profile().map(BinaryData::from),
+            iccp: decoder.icc_profile().ok().flatten().map(BinaryData::from),
             ..Default::default()
         };
 
@@ -87,8 +84,8 @@ impl Handler {
 }
 
 impl ImageInfo {
-    pub fn from_decoder<'a, T: image::ImageDecoder<'a>>(
-        decoder: &mut T,
+    pub fn from_decoder(
+        decoder: &mut impl image::ImageDecoder,
         _format_name: impl ToString,
     ) -> Self {
         let (width, height) = decoder.dimensions();

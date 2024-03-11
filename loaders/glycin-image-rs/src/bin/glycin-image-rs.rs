@@ -157,7 +157,7 @@ impl LoaderImplementation for ImgDecoder {
     }
 }
 
-pub enum ImageRsDecoder<T: std::io::Read + std::io::Seek> {
+pub enum ImageRsDecoder<T: std::io::BufRead + std::io::Seek> {
     Bmp(codecs::bmp::BmpDecoder<T>),
     Dds(codecs::dds::DdsDecoder<T>),
     Farbfeld(codecs::farbfeld::FarbfeldDecoder<T>),
@@ -173,7 +173,7 @@ pub enum ImageRsDecoder<T: std::io::Read + std::io::Seek> {
     WebP(codecs::webp::WebPDecoder<T>),
 }
 
-pub struct ImageRsFormat<T: std::io::Read + std::io::Seek> {
+pub struct ImageRsFormat<T: std::io::BufRead + std::io::Seek> {
     decoder: ImageRsDecoder<T>,
     handler: Handler,
 }
@@ -269,7 +269,7 @@ impl ImageRsFormat<Reader> {
     }
 }
 
-impl<'a, T: std::io::Read + std::io::Seek + 'a> ImageRsFormat<T> {
+impl<'a, T: std::io::BufRead + std::io::Seek + 'a> ImageRsFormat<T> {
     pub fn format_name(mut self, format_name: impl ToString) -> Self {
         self.handler = self.handler.format_name(format_name);
         self
@@ -376,10 +376,10 @@ impl<'a, T: std::io::Read + std::io::Seek + 'a> ImageRsFormat<T> {
     }
 }
 
-impl<'a, T: std::io::Read + std::io::Seek + 'a> ImageRsDecoder<T> {
+impl<'a, T: std::io::BufRead + std::io::Seek + 'a> ImageRsDecoder<T> {
     fn into_frames(self) -> Option<image::Frames<'a>> {
         match self {
-            Self::Png(d) => Some(d.apng().into_frames()),
+            Self::Png(d) => Some(d.apng().unwrap().into_frames()),
             Self::Gif(d) => Some(d.into_frames()),
             Self::WebP(d) => Some(d.into_frames()),
             _ => None,
@@ -389,7 +389,7 @@ impl<'a, T: std::io::Read + std::io::Seek + 'a> ImageRsDecoder<T> {
     fn is_animated(&self) -> bool {
         match self {
             Self::Gif(_) => true,
-            Self::Png(d) => d.is_apng(),
+            Self::Png(d) => d.is_apng().unwrap(),
             Self::WebP(d) => d.has_animation(),
             _ => false,
         }

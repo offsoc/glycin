@@ -11,6 +11,6 @@ rust-version.workspace = true
 
 [dependencies]
 glycin-utils = { workspace = true, features = ["loader-utils", "image-rs"] }
-jpegxl-rs = "0.8.3"
-jpegxl-sys = "0.8.2"
+jpegxl-rs = "0.10.3"
+jpegxl-sys = "0.10.3"
 safe-transmute.workspace = true

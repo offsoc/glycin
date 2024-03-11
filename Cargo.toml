@@ -6,7 +6,7 @@ license = "MPL-2.0 OR LGPL-2.1-or-later"
 homepage = "https://gitlab.gnome.org/sophie-h/glycin"
 repository = "https://gitlab.gnome.org/sophie-h/glycin"
 edition = "2021"
-rust-version = "1.75"
+rust-version = "1.76"
 
 [profile.release]
 lto = true
@@ -41,7 +41,7 @@ glycin-utils = { version = "1.0.0", path = "glycin-utils/" }
 gufo-common = { version = "0.1.0", git = "https://github.com/gufo-rs/gufo.git", features = [
     "serde",
 ] }
-image = { version = "0.24.7" }
+image = { version = "0.25.1" }
 kamadak-exif = "0.5.5"
 lcms2 = "6.0.3"
 lcms2-sys = "4.0.4"
