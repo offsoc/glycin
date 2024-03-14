@@ -1,3 +1,7 @@
+## 1.0.0
+
+- glycin: Change to stable crate version
+
 ## 1.0.rc
 
 - glycin: Allow fstat syscall
