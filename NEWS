@@ -1,6 +1,7 @@
 ## 1.0.0
 
 - glycin: Change to stable crate version
+- svg: Change to stable rsvg version
 
 ## 1.0.rc
 
