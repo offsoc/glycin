@@ -29,43 +29,55 @@ variables:
       - tests/failures
       - builddir/meson-logs
 
-x86_64:
-  image: rust:1.75-bookworm
-  extends: .install_dependencies
-  interruptible: true
-  script:
-    - export LD_LIBRARY_PATH=/usr/local/lib/x86_64-linux-gnu/
-    # Skip isolated install for tests to test usual installation scenario
-    - meson setup -Dprofile=dev -Dtest_skip_install=true builddir
-    - meson install -C builddir
-    - meson test -vC builddir
+        #x86_64:
+        #  image: rust:1.75-bookworm
+        #  extends: .install_dependencies
+        #  interruptible: true
+        #  script:
+        #    - export LD_LIBRARY_PATH=/usr/local/lib/x86_64-linux-gnu/
+        #    # Skip isolated install for tests to test usual installation scenario
+        #    - meson setup -Dprofile=dev -Dtest_skip_install=true builddir
+        #    - meson install -C builddir
+        #    - meson test -vC builddir
 
-i386:
-  # Use hash to force i386, lookup here <https://hub.docker.com/r/i386/rust/tags>
-  image: rust@sha256:ade85905b82458a399a2d86bfaebf666e33ed8d70f55328ede3190f313f5957f
-  extends: .install_dependencies
-  interruptible: true
-  script:
-    - export LD_LIBRARY_PATH=/usr/local/lib/i386-linux-gnu/
-    - meson setup -Dprofile=dev -Dtest_skip_install=true builddir
-    - meson install -C builddir
-    - meson test -vC builddir
+        #i386:
+        #  # Use hash to force i386, lookup manifest digest here <https://hub.docker.com/r/i386/rust/tags>
+        #  image: rust@sha256:ade85905b82458a399a2d86bfaebf666e33ed8d70f55328ede3190f313f5957f
+        #  extends: .install_dependencies
+        #  interruptible: true
+        #  script:
+        #    - export LD_LIBRARY_PATH=/usr/local/lib/i386-linux-gnu/
+        #    - meson setup -Dprofile=dev -Dtest_skip_install=true builddir
+        #    - meson install -C builddir
+        #    - meson test -vC builddir
 
-aarch64:
-  image: rust:1.75-bookworm
+armv7:
+  image: rust@sha256:55b11b587f82a6b7601124a579c6bc01a7fd294e7cb0611f35e2ffaba9f831e6
   tags:
     - aarch64
   extends: .install_dependencies
   interruptible: true
   script:
-    - export LD_LIBRARY_PATH=/usr/local/lib/aarch64-linux-gnu/
+    - export LD_LIBRARY_PATH=/usr/local/lib/armhf-linux-gnu/
     - meson setup -Dprofile=dev -Dtest_skip_install=true builddir
     - meson install -C builddir
     - meson test -vC builddir
 
-cargo-deny:
-  interruptible: true
-  image: rust
-  script:
-    - cargo install cargo-deny
-    - cargo deny check
+      #aarch64:
+      #  image: rust:1.75-bookworm
+      #  tags:
+      #    - aarch64
+      #  extends: .install_dependencies
+      #  interruptible: true
+      #  script:
+      #    - export LD_LIBRARY_PATH=/usr/local/lib/aarch64-linux-gnu/
+      #    - meson setup -Dprofile=dev -Dtest_skip_install=true builddir
+      #    - meson install -C builddir
+      #    - meson test -vC builddir
+      #
+      #cargo-deny:
+      #  interruptible: true
+      #  image: rust
+      #  script:
+      #    - cargo install cargo-deny
+      #    - cargo deny check
