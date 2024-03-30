@@ -8,9 +8,7 @@ use glycin_utils::*;
 use jpegxl_rs::image::ToDynamic;
 use jpegxl_sys::*;
 
-fn main() {
-    Communication::spawn(ImgDecoder::default());
-}
+init_main!(ImgDecoder::default());
 
 type InitData = Option<(Vec<u8>, Option<Vec<u8>>)>;
 

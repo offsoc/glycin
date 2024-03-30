@@ -1,3 +1,7 @@
+## 1.0.1
+
+- loaders/utils: Register SIGSYS handler as early as possible for better debugging for unallowed syscalls
+
 ## 1.0.0
 
 - glycin: Change to stable crate version

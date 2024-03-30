@@ -5,9 +5,7 @@ use std::sync::Mutex;
 use glycin_utils::*;
 use libheif_rs::{ColorProfile, ColorSpace, HeifContext, LibHeif, RgbChroma, StreamReader};
 
-fn main() {
-    Communication::spawn(ImgDecoder::default());
-}
+init_main!(ImgDecoder::default());
 
 #[derive(Default)]
 pub struct ImgDecoder {

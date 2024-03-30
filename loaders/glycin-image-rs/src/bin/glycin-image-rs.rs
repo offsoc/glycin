@@ -9,9 +9,7 @@ use glycin_utils::*;
 use image::io::Limits;
 use image::{codecs, AnimationDecoder, ImageDecoder, ImageResult};
 
-fn main() {
-    Communication::spawn(ImgDecoder::default());
-}
+init_main!(ImgDecoder::default());
 
 type Reader = Cursor<Vec<u8>>;
 

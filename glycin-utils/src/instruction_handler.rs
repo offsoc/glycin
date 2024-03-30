@@ -16,8 +16,6 @@ pub struct Communication {
 
 impl Communication {
     pub fn spawn(decoder: impl LoaderImplementation + 'static) {
-        Self::setup_sigsys_handler();
-
         futures_lite::future::block_on(async move {
             let _connection = Communication::new(decoder).await;
             std::future::pending::<()>().await;
@@ -55,7 +53,9 @@ impl Communication {
         );
 
         unsafe {
-            nix::sys::signal::sigaction(nix::sys::signal::Signal::SIGSYS, &sigaction).unwrap()
+            if nix::sys::signal::sigaction(nix::sys::signal::Signal::SIGSYS, &sigaction).is_err() {
+                libc_eprint("glycin sandbox: Failed to init syscall failure signal handler");
+            }
         };
     }
 
@@ -83,11 +83,15 @@ impl Communication {
 
         let name = libseccomp::ScmpSyscall::from(syscall).get_name().ok();
 
-        eprintln!(
-            "glycin sandbox: Blocked syscall used: '{}' ({})",
-            name.unwrap_or_else(|| String::from("Unknown Syscall")),
-            syscall
-        );
+        libc_eprint("glycin sandbox: Blocked syscall used: ");
+        libc_eprint(&name.unwrap_or_else(|| String::from("Unknown Syscall")));
+        libc_eprint(" (");
+        libc_eprint(&syscall.to_string());
+        libc_eprint(")\n");
+
+        unsafe {
+            libc::exit(128 + libc::SIGSYS);
+        }
     }
 }
 
@@ -134,5 +138,33 @@ impl Loader {
             })?
             .frame(frame_request)
             .map_err(Into::into)
+    }
+}
+
+#[allow(dead_code)]
+pub extern "C" fn pre_main() {
+    Communication::setup_sigsys_handler();
+}
+
+#[macro_export]
+macro_rules! init_main {
+    ($init:expr) => {
+        /// Init handler for SIGSYS before main() to catch
+        #[cfg_attr(target_os = "linux", link_section = ".ctors")]
+        static __CTOR: extern "C" fn() = pre_main;
+
+        fn main() {
+            $crate::Communication::spawn($init);
+        }
+    };
+}
+
+fn libc_eprint(s: &str) {
+    unsafe {
+        libc::write(
+            libc::STDERR_FILENO,
+            s.as_ptr() as *const libc::c_void,
+            s.len(),
+        );
     }
 }
