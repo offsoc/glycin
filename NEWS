@@ -1,6 +1,7 @@
 ## 1.0.1
 
 - loaders/utils: Register SIGSYS handler as early as possible for better debugging for unallowed syscalls
+- sandbox: Allow membarrier, open, stat syscalls
 
 ## 1.0.0
 
