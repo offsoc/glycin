@@ -6,7 +6,7 @@ variables:
 .install_dependencies:
   before_script:
     - apt update
-    - apt install -y git curl meson pkg-config build-essential liblcms2-dev gettext clang mold bubblewrap libseccomp-dev
+    - apt install -y git curl meson pkg-config gobject-introspection gi-docgen valac libgirepository1.0-dev python3-gi build-essential liblcms2-dev gettext clang mold bubblewrap libseccomp-dev
     # libdrm-dev libheif-dev libgtk-4-dev
 
     #- git clone --depth 1 https://gitlab.freedesktop.org/cairo/cairo.git
@@ -39,9 +39,13 @@ x86_64:
   script:
     - export LD_LIBRARY_PATH=/usr/local/lib/x86_64-linux-gnu/
     # Skip isolated install for tests to test usual installation scenario
-    - meson setup -Dprofile=dev -Dtest_skip_install=true builddir
+    - meson setup -Dprofile=dev -Dpython_tests=true -Dtest_skip_install=true -Dcapi_docs=true --prefix=/usr builddir
     - meson install -C builddir
     - meson test -vC builddir
+    - mv builddir/libglycin/libglycin-1 c-api
+  artifacts:
+    paths:
+      - c-api
 
 #i386:
 #  # Use hash to force i386, lookup here <https://hub.docker.com/r/i386/rust/tags>
@@ -50,7 +54,7 @@ x86_64:
 #  interruptible: true
 #  script:
 #    - export LD_LIBRARY_PATH=/usr/local/lib/i386-linux-gnu/
-#    - meson setup -Dprofile=dev -Dtest_skip_install=true builddir
+#    - meson setup -Dprofile=dev  -Dpython_tests=true -Dtest_skip_install=true --prefix=/usr builddir
 #    - meson install -C builddir
 #    - meson test -vC builddir
 
@@ -62,7 +66,7 @@ aarch64:
   interruptible: true
   script:
     - export LD_LIBRARY_PATH=/usr/local/lib/aarch64-linux-gnu/
-    - meson setup -Dprofile=dev -Dtest_skip_install=true builddir
+    - meson setup -Dprofile=dev -Dpython_tests=true -Dtest_skip_install=true --prefix=/usr builddir
     - meson install -C builddir
     - meson test -vC builddir
 
@@ -72,3 +76,16 @@ cargo-deny:
   script:
     - cargo install cargo-deny
     - cargo deny check
+
+pages:
+  stage: deploy
+  dependencies:
+    - x86_64
+  script:
+    - mkdir public
+    - mv c-api public
+  artifacts:
+    paths:
+      - public
+#  rules:
+#    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

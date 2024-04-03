@@ -1,39 +1,43 @@
 project(
-    'glycin-loaders',
-    'rust',
-    version: '1.0.1',
-    meson_version: '>=0.57',
+  'glycin-loaders',
+  'rust',
+  'c',
+  version: '1.0.1',
+  meson_version: '>=0.60',
 )
 
-dependency('libseccomp', version: '>= 2.5.0')
-
-if 'glycin-heif' in get_option('loaders')
-  dependency('libheif', version: '>= 1.17.0')
-endif
-
-if 'glycin-jxl' in get_option('loaders')
-  dependency('libjxl', version: ['>= 0.8.2', '< 0.11.0'])
-endif
-
-if 'glycin-svg' in get_option('loaders')
-  dependency('cairo', version: '>= 1.17.0')
-endif
-
-if get_option('tests')
-  dependency('gtk4', version: '>= 4.12.0')
-endif
-
-i18n = import ('i18n')
+lcms2_req = '>= 2.14'
+gio_req = '>=2.60'
+gtk4_req = '>= 4.12.0'
+seccomp_req = '>= 2.5.0'
 
 compat_version = '1+'
 
-libexecdir = get_option('prefix') / get_option('libexecdir') / meson.project_name() / compat_version
 datadir = get_option('prefix') / get_option('datadir')
-glycin_datadir = datadir / meson.project_name() / compat_version
+libdir = get_option('prefix') / get_option('libdir')
+includedir = get_option('prefix') / get_option('includedir')
 
-meson.add_dist_script(
-  'build-aux/dist-vendor.sh',
-  meson.project_version()
+cargo_target_dir = meson.project_build_root() / 'cargo-target'
+cargo_home = meson.project_build_root() / 'cargo-home'
+cargo_bin = find_program('cargo')
+
+if get_option('profile') == 'release'
+  rust_target = 'release'
+  cargo_profile = 'release'
+else
+  rust_target = 'debug'
+  cargo_profile = 'dev'
+endif
+
+introsepction = (
+  get_option('introspection')
+  or get_option('vapi')
+  or get_option('capi_docs')
 )
 
+if get_option('introspection') != introsepction
+  summary('introspection', introsepction, section: 'Overwritten options')
+endif
+
 subdir('loaders')
+subdir('libglycin')

@@ -3,6 +3,8 @@ use std::sync::OnceLock;
 
 use async_global_executor::spawn_blocking;
 use gdk::gio;
+#[cfg(feature = "gobject")]
+use gio::glib;
 use gio::prelude::*;
 pub use glycin_utils::FrameDetails;
 use glycin_utils::ImageInfo;
@@ -39,6 +41,37 @@ impl SandboxMechanism {
             Self::Bwrap
         }
     }
+
+    pub fn into_selector(self) -> SandboxSelector {
+        match self {
+            Self::Bwrap => SandboxSelector::Bwrap,
+            Self::FlatpakSpawn => SandboxSelector::FlatpakSpawn,
+            Self::NotSandboxed => SandboxSelector::NotSandboxed,
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, Default)]
+#[cfg_attr(feature = "gobject", derive(gio::glib::Enum))]
+#[cfg_attr(feature = "gobject", enum_type(name = "GlySandboxSelector"))]
+#[repr(i32)]
+pub enum SandboxSelector {
+    #[default]
+    Auto,
+    Bwrap,
+    FlatpakSpawn,
+    NotSandboxed,
+}
+
+impl SandboxSelector {
+    pub async fn determine_sandbox_mechanism(self) -> SandboxMechanism {
+        match self {
+            Self::Auto => SandboxMechanism::detect().await,
+            Self::Bwrap => SandboxMechanism::Bwrap,
+            Self::FlatpakSpawn => SandboxMechanism::FlatpakSpawn,
+            Self::NotSandboxed => SandboxMechanism::NotSandboxed,
+        }
+    }
 }
 
 /// Image request builder
@@ -46,7 +79,7 @@ impl SandboxMechanism {
 pub struct Loader {
     file: gio::File,
     cancellable: gio::Cancellable,
-    sandbox_mechanism: Option<SandboxMechanism>,
+    pub(crate) sandbox_mechanism: SandboxSelector,
 }
 
 impl Loader {
@@ -55,7 +88,7 @@ impl Loader {
         Self {
             file,
             cancellable: gio::Cancellable::new(),
-            sandbox_mechanism: None,
+            sandbox_mechanism: SandboxSelector::default(),
         }
     }
 
@@ -63,10 +96,9 @@ impl Loader {
     ///
     /// The default without calling this function is to automatically select a
     /// sandbox mechanism. The sandbox is never disabled automatically.
-    /// Passing [`None`](Option::None) selects the automatic sandbox
-    /// selection mechanism selection.
     pub fn sandbox_mechanism(&mut self, sandbox_mechanism: Option<SandboxMechanism>) -> &mut Self {
-        self.sandbox_mechanism = sandbox_mechanism;
+        self.sandbox_mechanism =
+            sandbox_mechanism.map_or(SandboxSelector::Auto, |x| x.into_selector());
         self
     }
 
@@ -84,11 +116,7 @@ impl Loader {
         let mime_type = Self::guess_mime_type(&gfile_worker).await?;
         let decoder_config = config.get(&mime_type)?;
 
-        let sandbox_mechanism = if let Some(m) = self.sandbox_mechanism {
-            m
-        } else {
-            SandboxMechanism::detect().await
-        };
+        let sandbox_mechanism = self.sandbox_mechanism.determine_sandbox_mechanism().await;
 
         let base_dir = if decoder_config.expose_base_dir {
             self.file.parent().and_then(|x| x.path())
@@ -203,7 +231,7 @@ impl<'a> Image<'a> {
 
     /// Active sandbox mechanis
     pub fn active_sandbox_mechanism(&self) -> SandboxMechanism {
-        self.active_sandbox_mechanism.clone()
+        self.active_sandbox_mechanism
     }
 }
 

@@ -1,11 +1,18 @@
+# global
+
 option(
   'profile',
   type: 'combo',
-  choices: [
-    'release',
-    'dev'
-  ],
+  choices: ['release', 'dev'],
   value: 'release',
+)
+
+# glycin loaders
+
+option(
+  'glycin-loaders',
+  type: 'boolean',
+  description: 'Build loaders',
 )
 
 option(
@@ -29,19 +36,53 @@ option(
 option(
   'test_skip_ext',
   type: 'array',
-  description: 'Image filename extensions, exlcuding dots, to skip during tests.'
+  description: 'Image filename extensions, exlcuding dots, to skip during tests.',
 )
 
 option(
   'tests',
   type: 'boolean',
   value: true,
-  description: 'Support running tests.'
+  description: 'Support running tests.',
 )
 
 option(
   'test_skip_install',
   type: 'boolean',
   value: false,
-  description: 'Do not run meson install before running tests.'
+  description: 'Do not run meson install before running tests.',
+)
+
+# libglycin
+
+option(
+  'libglycin',
+  type: 'boolean',
+  description: 'Build C bindings for the glycin crate',
+)
+
+option(
+  'introspection',
+  type: 'boolean',
+  description: 'Generate .gir and .typelib files',
+)
+
+option(
+  'vapi',
+  type: 'boolean',
+  description: 'Generate .vapi files for the Vala language',
+)
+
+option(
+  'capi_docs',
+  type: 'boolean',
+  value: false,
+  description: 'Generate HTML documentation for C API',
+)
+
+option(
+  'python_tests',
+  type: 'boolean',
+  value: false,
+  description: 'Test python bindings. Needs python3-gi',
 )

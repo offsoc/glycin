@@ -33,6 +33,9 @@ mod api;
 mod config;
 mod dbus;
 mod error;
+
+#[cfg(feature = "gobject")]
+pub mod gobject;
 mod icc;
 mod sandbox;
 

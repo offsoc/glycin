@@ -37,6 +37,11 @@ pub struct FrameRequest {
 /// Various image metadata
 #[derive(Deserialize, Serialize, Type, Debug, Clone)]
 pub struct ImageInfo {
+    /// Early dimension information.
+    ///
+    /// This information is often correct. However, it should only be used for
+    /// an early rendering estimates. For everything else, the specific frame
+    /// information should be used.
     pub width: u32,
     pub height: u32,
     pub details: ImageInfoDetails,
