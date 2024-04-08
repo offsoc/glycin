@@ -23,6 +23,8 @@ variables:
     - echo "deb https://deb.debian.org/debian/ experimental main" >> /etc/apt/sources.list
     - apt update
     - apt install libjxl-dev -t experimental -y
+
+    - fc-cache
   artifacts:
     when: always
     paths:

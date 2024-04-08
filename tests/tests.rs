@@ -28,6 +28,11 @@ fn exif() {
     async_global_executor::block_on(test_dir("test-images/images/exif"));
 }
 
+#[test]
+fn fonts() {
+    async_global_executor::block_on(test_dir("test-images/images/fonts"));
+}
+
 #[allow(dead_code)]
 #[derive(Debug)]
 struct TestResult {

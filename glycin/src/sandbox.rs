@@ -45,11 +45,15 @@ const ALLOWED_SYSCALLS: &[&str] = &[
     "execve",
     "exit",
     "faccessat",
+    "fadvise64",
+    "fadvise64_64",
     "fchdir",
     "fcntl",
     "fcntl",
     "fcntl64",
     "fstat",
+    "fstatfs",
+    "fstatfs64",
     "ftruncate",
     "futex",
     "futex_time64",
@@ -116,6 +120,7 @@ const ALLOWED_SYSCALLS: &[&str] = &[
     "statfs",
     "statfs64",
     "statx",
+    "sysinfo",
     "timerfd_create",
     "timerfd_settime",
     "timerfd_settime64",
@@ -257,6 +262,13 @@ impl Sandbox {
                 "--setenv",
                 "XDG_RUNTIME_DIR",
                 "/tmp-run",
+                // Fontconfig
+                "--ro-bind-try",
+                "/etc/fonts",
+                "/etc/fonts",
+                "--ro-bind-try",
+                "/var/cache/fontconfig",
+                "/var/cache/fontconfig",
             ]
             .iter()
             .map(|x| (*x).into())

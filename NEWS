@@ -1,3 +1,7 @@
+## 1.0.2
+
+- sandbox: Add directories and syscalls needed for fontconfig to work
+
 ## 1.0.1
 
 - loaders/utils: Register SIGSYS handler as early as possible for better debugging for unallowed syscalls
