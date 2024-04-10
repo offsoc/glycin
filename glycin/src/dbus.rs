@@ -87,7 +87,7 @@ impl<'a> DecoderProcess<'a> {
             }
         }?;
 
-        cancellable.connect_cancelled_local(move |_| {
+        cancellable.connect_cancelled(move |_| {
             let _result = signal::kill(subprocess_id, signal::Signal::SIGKILL);
         });
 
