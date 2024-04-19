@@ -19,8 +19,17 @@ $ meson install -C builddir
 $ GLYCIN_DATA_DIR=$(pwd)/install/share cargo r -p tools --bin glycin-image-info image.png
 ```
 
+Get Exif information
+
 ```sh
 $ identify -format '%[EXIF:*]' <image>
+```
+
+Increase memory usage (this can crash your PC)
+
+```sh
+$ sudo swapoff -a
+$ stress-ng --vm-bytes 20G --vm-keep -m 1
 ```
 
 ## Test D-Bus API stability
