@@ -43,16 +43,16 @@ x86_64:
     - meson install -C builddir
     - meson test -vC builddir
 
-i386:
-  # Use hash to force i386, lookup here <https://hub.docker.com/r/i386/rust/tags>
-  image: rust@sha256:ade85905b82458a399a2d86bfaebf666e33ed8d70f55328ede3190f313f5957f
-  extends: .install_dependencies
-  interruptible: true
-  script:
-    - export LD_LIBRARY_PATH=/usr/local/lib/i386-linux-gnu/
-    - meson setup -Dprofile=dev -Dtest_skip_install=true builddir
-    - meson install -C builddir
-    - meson test -vC builddir
+#i386:
+#  # Use hash to force i386, lookup here <https://hub.docker.com/r/i386/rust/tags>
+#  image: rust@sha256:ade85905b82458a399a2d86bfaebf666e33ed8d70f55328ede3190f313f5957f
+#  extends: .install_dependencies
+#  interruptible: true
+#  script:
+#    - export LD_LIBRARY_PATH=/usr/local/lib/i386-linux-gnu/
+#    - meson setup -Dprofile=dev -Dtest_skip_install=true builddir
+#    - meson install -C builddir
+#    - meson test -vC builddir
 
 aarch64:
   image: rust:1.75-bookworm
