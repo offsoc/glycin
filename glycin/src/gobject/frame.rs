@@ -5,6 +5,8 @@ use glib::subclass::prelude::*;
 
 use crate::Frame;
 
+static_assertions::assert_impl_all!(GlyFrame: Send, Sync);
+
 pub mod imp {
     use super::*;
 
@@ -17,7 +19,6 @@ pub mod imp {
     impl ObjectSubclass for GlyFrame {
         const NAME: &'static str = "GlyFrame";
         type Type = super::GlyFrame;
-        type ParentType = glib::Object;
     }
 
     impl ObjectImpl for GlyFrame {}
@@ -30,7 +31,7 @@ glib::wrapper! {
 
 impl GlyFrame {
     pub(crate) fn new(frame: Frame) -> Self {
-        let obj: Self = glib::Object::new();
+        let obj = glib::Object::new::<Self>();
         obj.imp().frame.set(frame).unwrap();
         obj
     }

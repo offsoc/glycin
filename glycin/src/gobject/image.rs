@@ -7,6 +7,8 @@ use glycin_utils::ImageInfo;
 use super::GlyFrame;
 use crate::Image;
 
+static_assertions::assert_impl_all!(GlyImage: Send, Sync);
+
 pub mod imp {
     use super::*;
 
@@ -19,7 +21,6 @@ pub mod imp {
     impl ObjectSubclass for GlyImage {
         const NAME: &'static str = "GlyImage";
         type Type = super::GlyImage;
-        type ParentType = glib::Object;
     }
 
     impl ObjectImpl for GlyImage {}
@@ -32,7 +33,7 @@ glib::wrapper! {
 
 impl GlyImage {
     pub(crate) fn new(image: Image<'static>) -> Self {
-        let obj: Self = glib::Object::new();
+        let obj = glib::Object::new::<Self>();
         obj.imp().image.set(image).unwrap();
         obj
     }

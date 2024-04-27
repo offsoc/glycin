@@ -1,5 +1,6 @@
 use std::ffi::c_char;
 use std::ptr;
+use std::sync::OnceLock;
 
 use gdk::{gio, glib};
 use gio::ffi::{GAsyncReadyCallback, GAsyncResult, GTask};
@@ -7,6 +8,7 @@ use gio::prelude::*;
 use glib::ffi::{gpointer, GError, GType};
 use glib::subclass::prelude::*;
 use glib::translate::*;
+use glib::GString;
 use glycin::gobject;
 
 use crate::common::*;
@@ -23,13 +25,13 @@ pub extern "C" fn gly_image_get_type() -> GType {
 pub unsafe extern "C" fn gly_image_next_frame(
     image: *mut GlyImage,
     g_error: *mut *mut GError,
-) -> *const GlyFrame {
-    let obj = gobject::GlyImage::from_glib_borrow(image);
+) -> *mut GlyFrame {
+    let obj = gobject::GlyImage::from_glib_ptr_borrow(&(image as *const _));
 
     let result = async_io::block_on(obj.next_frame());
 
     match result {
-        Ok(frame) => frame.to_glib_full(),
+        Ok(frame) => frame.into_glib_ptr(),
         Err(err) => {
             set_error(g_error, &err);
             ptr::null_mut()
@@ -45,21 +47,28 @@ pub unsafe extern "C" fn gly_image_next_frame_async(
     user_data: gpointer,
 ) {
     let obj = gobject::GlyImage::from_glib_none(image);
-    let cancellable = Option::<gio::Cancellable>::from_glib_borrow(cancellable);
-    let callback = GAsyncReadyCallbackSend(callback.unwrap());
-    let user_data = GPointerSend(user_data);
-    if let Some(cancellable) = &*cancellable {
-        cancellable
-            .connect_cancelled(glib::clone!(@weak obj => move |_| obj.cancellable().cancel()));
-    }
+    let cancellable = (!cancellable.is_null())
+        .then(|| gio::Cancellable::from_glib_ptr_borrow(&(cancellable as *const _)));
+    let callback: GAsyncReadyCallbackSend = GAsyncReadyCallbackSend::new(callback, user_data);
 
-    let closure = glib::clone!(@strong obj => move |task: gio::Task<gobject::GlyFrame>, _: Option<&gobject::GlyImage>| {
+    let cancel_signal: Option<CancelledHandlerId> = if let Some(cancellable) = cancellable {
+        cancellable
+            .connect_cancelled(glib::clone!(@weak obj => move |_| obj.cancellable().cancel()))
+    } else {
+        None
+    };
+
+    let closure = move |task: gio::Task<gobject::GlyFrame>, obj: Option<&gobject::GlyImage>| {
+        if let (Some(cancel_signal), Some(cancellable)) = (cancel_signal, cancellable) {
+            cancellable.disconnect_cancelled(cancel_signal);
+        }
+
         let result: *mut gio::ffi::GAsyncResult =
             task.upcast_ref::<gio::AsyncResult>().to_glib_none().0;
-        callback.call(obj, result, user_data);
-    });
+        callback.call(obj.unwrap(), result);
+    };
 
-    let task = gio::Task::new(Some(&obj), (*cancellable).as_ref(), closure);
+    let task = gio::Task::new(Some(&obj), cancellable, closure);
 
     glib::MainContext::ref_thread_default().spawn_local(async move {
         let res = obj.next_frame().await.map_err(|x| glib_error(&x));
@@ -72,11 +81,11 @@ pub unsafe extern "C" fn gly_image_next_frame_finish(
     _image: *mut GlyImage,
     res: *mut GAsyncResult,
     error: *mut *mut GError,
-) -> *const GlyFrame {
+) -> *mut GlyFrame {
     let task = gio::Task::<gobject::GlyFrame>::from_glib_none(res as *mut GTask);
 
     match task.propagate() {
-        Ok(frame) => frame.to_glib_full(),
+        Ok(frame) => frame.into_glib_ptr(),
         Err(e) => {
             if !error.is_null() {
                 *error = e.into_glib_ptr();
@@ -88,18 +97,24 @@ pub unsafe extern "C" fn gly_image_next_frame_finish(
 
 #[no_mangle]
 pub unsafe extern "C" fn gly_image_get_mime_type(image: *mut GlyImage) -> *const c_char {
-    let image = gobject::GlyImage::from_glib_borrow(image);
-    image.image().mime_type().to_glib_full()
+    static MIME_TYPE: OnceLock<GString> = OnceLock::new();
+
+    let mime_type = MIME_TYPE.get_or_init(|| {
+        let image = gobject::GlyImage::from_glib_ptr_borrow(&(image as *const _));
+        GString::from(image.image().mime_type())
+    });
+
+    mime_type.as_ptr()
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn gly_image_get_width(image: *mut GlyImage) -> u32 {
-    let image = gobject::GlyImage::from_glib_borrow(image);
+    let image = gobject::GlyImage::from_glib_ptr_borrow(&(image as *const _));
     image.image_info().width
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn gly_image_get_height(image: *mut GlyImage) -> u32 {
-    let image = gobject::GlyImage::from_glib_borrow(image);
+    let image = gobject::GlyImage::from_glib_ptr_borrow(&(image as *const _));
     image.image_info().height
 }

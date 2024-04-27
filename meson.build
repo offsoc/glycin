@@ -29,14 +29,14 @@ else
   cargo_profile = 'dev'
 endif
 
-introsepction = (
+introspection = (
   get_option('introspection')
   or get_option('vapi')
   or get_option('capi_docs')
 )
 
-if get_option('introspection') != introsepction
-  summary('introspection', introsepction, section: 'Overwritten options')
+if get_option('introspection') != introspection
+  summary('introspection', introspection, section: 'Overwritten options')
 endif
 
 subdir('loaders')

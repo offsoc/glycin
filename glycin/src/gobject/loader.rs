@@ -7,6 +7,8 @@ use glib::subclass::prelude::*;
 use super::GlyImage;
 use crate::{Loader, SandboxSelector};
 
+static_assertions::assert_impl_all!(GlyLoader: Send, Sync);
+
 pub mod imp {
     use super::*;
 
@@ -16,7 +18,7 @@ pub mod imp {
         #[property(get, construct_only)]
         file: Mutex<Option<gio::File>>,
         #[property(get, set)]
-        cancellable: Mutex<Option<gio::Cancellable>>,
+        cancellable: Mutex<gio::Cancellable>,
         #[property(get, set, builder(SandboxSelector::default()))]
         sandbox_selector: Mutex<SandboxSelector>,
     }
@@ -25,22 +27,10 @@ pub mod imp {
     impl ObjectSubclass for GlyLoader {
         const NAME: &'static str = "GlyLoader";
         type Type = super::GlyLoader;
-        type ParentType = glib::Object;
     }
 
-    impl ObjectImpl for GlyLoader {
-        fn properties() -> &'static [glib::ParamSpec] {
-            Self::derived_properties()
-        }
-
-        fn set_property(&self, id: usize, value: &glib::Value, pspec: &glib::ParamSpec) {
-            self.derived_set_property(id, value, pspec)
-        }
-
-        fn property(&self, id: usize, pspec: &glib::ParamSpec) -> glib::Value {
-            self.derived_property(id, pspec)
-        }
-    }
+    #[glib::derived_properties]
+    impl ObjectImpl for GlyLoader {}
 }
 
 glib::wrapper! {
@@ -49,7 +39,7 @@ glib::wrapper! {
 }
 
 impl GlyLoader {
-    pub fn new(file: gio::File) -> Self {
+    pub fn new(file: &gio::File) -> Self {
         glib::Object::builder().property("file", file).build()
     }
 
@@ -57,10 +47,7 @@ impl GlyLoader {
         let mut loader = Loader::new(self.file().unwrap());
 
         loader.sandbox_mechanism = self.sandbox_selector();
-
-        if let Some(cancellable) = self.cancellable() {
-            loader.cancellable(cancellable);
-        }
+        loader.cancellable(self.cancellable());
 
         let image = loader.load().await?;
 

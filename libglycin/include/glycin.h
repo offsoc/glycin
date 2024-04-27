@@ -100,7 +100,7 @@ GlyLoader *gly_loader_new(GFile *file);
  * Since: 1.0
  */
 void gly_loader_set_sandbox_selector(GlyLoader *loader,
-                                               GlySandboxSelector sandbox_selector);
+                                     GlySandboxSelector sandbox_selector);
 
 /**
  * gly_loader_load:
@@ -109,7 +109,7 @@ void gly_loader_set_sandbox_selector(GlyLoader *loader,
  *
  * Synchronously loads an image and returns an [class@Image] when successful.
  *
- * Returns: (transfer full) (nullable): a new [class@Image] on success, or `NULL` with @error filled in
+ * Returns: (transfer full): a new [class@Image] on success, or `NULL` with @error filled in
  *
  * Since: 1.0
  */
@@ -120,7 +120,7 @@ GlyImage *gly_loader_load(GlyLoader *loader,
  * gly_loader_load_async:
  * @loader:
  * @cancellable: (nullable): A [class@Gio.Cancellable] to cancel the operation
- * @callback: (nullable) (scope async): A callback to call when the operation is complete
+ * @callback: (scope async): A callback to call when the operation is complete
  * @user_data: (closure callback): Data to pass to @callback
  *
  * Asynchronous version of [method@Loader.load].
@@ -140,7 +140,7 @@ void gly_loader_load_async(GlyLoader *loader,
  *
  * Finishes the [method@Image.next_frame_async] call.
  *
- * Returns: (transfer full) (nullable): Loaded frame.
+ * Returns: (transfer full): Loaded frame.
  *
  * Since: 1.0
  */
@@ -160,7 +160,7 @@ GlyImage *gly_loader_load_finish(GlyLoader *loader,
  * For single still images, this can only be called once.
  * For animated images, this function will loop to the first frame, when the last frame is reached.
  *
- * Returns: (transfer full) (nullable): a new [class@Frame] on success, or `NULL` with @error filled in
+ * Returns: (transfer full): a new [class@Frame] on success, or `NULL` with @error filled in
  *
  * Since: 1.0
  */
@@ -171,7 +171,7 @@ GlyFrame *gly_image_next_frame(GlyImage *image,
  * gly_image_next_frame_async:
  * @image:
  * @cancellable: (nullable): A [class@Gio.Cancellable] to cancel the operation
- * @callback: (nullable) (scope async): A callback to call when the operation is complete
+ * @callback: (scope async): A callback to call when the operation is complete
  * @user_data: (closure callback): Data to pass to @callback
  *
  * Asynchronous version of [method@Image.next_frame].
@@ -191,7 +191,7 @@ void gly_image_next_frame_async(GlyImage *image,
  *
  * Finishes the [method@Image.next_frame_async] call.
  *
- * Returns: (transfer full) (nullable): Loaded frame.
+ * Returns: (transfer full): Loaded frame.
  *
  * Since: 1.0
  */

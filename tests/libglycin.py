@@ -11,7 +11,7 @@ dir = os.path.dirname(os.path.abspath(__file__))
 
 test_image = os.path.join(dir, "test-images/images/color/color.jpg")
 file = Gio.File.new_for_path(test_image)
-loader = Gly.Loader.new(file)
+loader = Gly.Loader(file=file)
 loader.set_sandbox_selector(Gly.SandboxSelector.AUTO)
 
 image = loader.load()

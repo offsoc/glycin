@@ -1,174 +1,176 @@
-if get_option('glycin-loaders')
-  dependency('libseccomp', version: seccomp_req)
+if not get_option('glycin-loaders')
+  subdir_done()
+endif
 
-  if 'glycin-heif' in get_option('loaders')
-    dependency('libheif', version: '>= 1.17.0')
+dependency('libseccomp', version: seccomp_req)
+
+if 'glycin-heif' in get_option('loaders')
+  dependency('libheif', version: '>= 1.17.0')
+endif
+
+if 'glycin-jxl' in get_option('loaders')
+  dependency('libjxl', version: ['>= 0.8.2', '< 0.11.0'])
+endif
+
+if 'glycin-svg' in get_option('loaders')
+  dependency('cairo', version: '>= 1.17.0')
+endif
+
+if get_option('tests')
+  dependency('gio-2.0', version: gio_req)
+  dependency('gtk4', version: gtk4_req)
+  dependency('lcms2', version: lcms2_req)
+endif
+
+glycin_datadir = datadir / meson.project_name() / compat_version
+
+meson.add_dist_script('../build-aux/dist-vendor.sh', meson.project_version())
+
+i18n = import('i18n')
+
+loader_libexecdir = (
+  get_option('prefix') / get_option('libexecdir') / meson.project_name() / compat_version
+)
+
+test_skip_ext = ''
+
+foreach ext : get_option('test_skip_ext')
+  if test_skip_ext != ''
+    test_skip_ext += ','
   endif
+  test_skip_ext += ext
+endforeach
 
-  if 'glycin-jxl' in get_option('loaders')
-    dependency('libjxl', version: ['>= 0.8.2', '< 0.11.0'])
-  endif
+cargo_options = [
+  '--profile',
+  cargo_profile,
+]
 
-  if 'glycin-svg' in get_option('loaders')
-    dependency('cairo', version: '>= 1.17.0')
-  endif
+cargo_env = {
+  # Don't use $HOME/.cargo/ for this
+  'CARGO_HOME': cargo_home,
+  # Gettext translation
+  'LOCALEDIR': get_option('prefix') / get_option('localedir'),
+  # Git commit for debugging
+  'GIT_DESCRIBE': run_command(
+    'git',
+    '-C',
+    meson.project_source_root(),
+    'rev-parse',
+    '--short',
+    'HEAD',
+    check: false,
+  ).stdout().strip(),
+}
 
-  if get_option('tests')
-    dependency('gio-2.0', version: gio_req)
-    dependency('gtk4', version: gtk4_req)
-    dependency('lcms2', version: lcms2_req)
-  endif
+test_args = []
+foreach loader : get_option('loaders')
+  test_args += ['-p', loader]
 
-  glycin_datadir = datadir / meson.project_name() / compat_version
-
-  meson.add_dist_script('../build-aux/dist-vendor.sh', meson.project_version())
-
-  i18n = import('i18n')
-
-  loader_libexecdir = (
-    get_option('prefix') / get_option('libexecdir') / meson.project_name() / compat_version
+  cargo_build = custom_target(
+    loader,
+    build_by_default: true,
+    build_always_stale: true,
+    output: loader + '-bin',
+    console: true,
+    env: cargo_env,
+    command: [
+      cargo_bin,
+      'build',
+      '--target-dir', cargo_target_dir,
+      cargo_options,
+      '--package', loader,
+    ],
   )
 
-  test_skip_ext = ''
+  custom_target(
+    loader + '-cp-binary',
+    depends: cargo_build,
+    build_by_default: true,
+    build_always_stale: true,
+    install: true,
+    install_dir: loader_libexecdir,
+    output: loader,
+    command: [
+      'cp',
+      cargo_target_dir / rust_target / loader,
+      '@OUTPUT@',
+    ],
+  )
 
-  foreach ext : get_option('test_skip_ext')
-    if test_skip_ext != ''
-      test_skip_ext += ','
-    endif
-    test_skip_ext += ext
-  endforeach
+  i18n.merge_file(
+    type: 'desktop',
+    input: configure_file(
+      input: loader / loader + '.conf',
+      output: 'tmp-' + loader,
+      configuration: {'EXEC': loader_libexecdir / loader},
+    ),
+    output: loader + '.conf',
+    po_dir: '..' / 'po',
+    install: true,
+    install_dir: glycin_datadir / 'conf.d',
+  )
+endforeach
 
-  cargo_options = [
-    '--profile',
-    cargo_profile,
-  ]
+if get_option('tests')
+  destdir = meson.project_build_root() / '_test-install'
 
-  cargo_env = {
-    # Don't use $HOME/.cargo/ for this
-    'CARGO_HOME': cargo_home,
-    # Gettext translation
-    'LOCALEDIR': get_option('prefix') / get_option('localedir'),
-    # Git commit for debugging
-    'GIT_DESCRIBE': run_command(
-      'git',
-      '-C',
-      meson.project_source_root(),
-      'rev-parse',
-      '--short',
-      'HEAD',
-      check: false,
-    ).stdout().strip(),
-  }
-
-  test_args = []
-  foreach loader : get_option('loaders')
-    test_args += ['-p', loader]
-
-    cargo_build = custom_target(
-      loader,
-      build_by_default: true,
-      build_always_stale: true,
-      output: loader + '-bin',
-      console: true,
-      env: cargo_env,
-      command: [
-        cargo_bin,
-        'build',
-        '--target-dir', cargo_target_dir,
-        cargo_options,
-        '--package', loader,
+  if not get_option('test_skip_install')
+    test(
+      'install-integration-test',
+      find_program('meson'),
+      args: [
+        'install',
+        '-C',
+        meson.project_build_root(),
+        '--destdir',
+        destdir,
       ],
+      is_parallel: false,
     )
 
-    custom_target(
-      loader + '-cp-binary',
-      depends: cargo_build,
-      build_by_default: true,
-      build_always_stale: true,
-      install: true,
-      install_dir: loader_libexecdir,
-      output: loader,
-      command: [
-        'cp',
-        cargo_target_dir / rust_target / loader,
-        '@OUTPUT@',
-      ],
+    # Rewrite config to point into destdir
+    setup_integration_test = find_program(
+      meson.project_source_root() / 'build-aux/setup-integration-test.py',
     )
-
-    i18n.merge_file(
-      type: 'desktop',
-      input: configure_file(
-        input: loader / loader + '.conf',
-        output: 'tmp-' + loader,
-        configuration: {'EXEC': loader_libexecdir / loader},
-      ),
-      output: loader + '.conf',
-      po_dir: '..' / 'po',
-      install: true,
-      install_dir: glycin_datadir / 'conf.d',
-    )
-  endforeach
-
-  if get_option('tests')
-    destdir = meson.project_build_root() / '_test-install'
-
-    if not get_option('test_skip_install')
+    foreach loader : get_option('loaders')
       test(
-        'install-integration-test',
-        find_program('meson'),
-        args: [
-          'install',
-          '-C',
-          meson.project_build_root(),
-          '--destdir',
-          destdir,
-        ],
+        'setup-integration-test-' + loader,
+        setup_integration_test,
+        env: {
+          'DESTDIR': destdir,
+          'CONFIG_FILE': glycin_datadir / 'conf.d' / loader + '.conf',
+        },
         is_parallel: false,
       )
-
-      # Rewrite config to point into destdir
-      setup_integration_test = find_program(
-        meson.project_source_root() / 'build-aux/setup-integration-test.py',
-      )
-      foreach loader : get_option('loaders')
-        test(
-          'setup-integration-test-' + loader,
-          setup_integration_test,
-          env: {
-            'DESTDIR': destdir,
-            'CONFIG_FILE': glycin_datadir / 'conf.d' / loader + '.conf',
-          },
-          is_parallel: false,
-        )
-      endforeach
-    endif
-
-    env = {'GLYCIN_TEST_SKIP_EXT': test_skip_ext}
-
-    if not get_option('test_skip_install')
-      # Use string concatenation to combine two absolute paths
-      env += {'GLYCIN_DATA_DIR': destdir + datadir}
-    endif
-
-    test(
-      'cargo-test',
-      cargo_bin,
-      args: [
-        'test',
-        '-p',
-        'tests',
-        test_args,
-        '--target-dir',
-        # Not using a separate target dir causes rebuilds for the loaders
-        cargo_target_dir / 'tests',
-        cargo_options,
-        '--',
-        '--test-threads=1',
-        '--nocapture',
-      ],
-      env: env,
-      is_parallel: false,
-      timeout: 1800,
-    )
+    endforeach
   endif
+
+  env = {'GLYCIN_TEST_SKIP_EXT': test_skip_ext}
+
+  if not get_option('test_skip_install')
+    # Use string concatenation to combine two absolute paths
+    env += {'GLYCIN_DATA_DIR': destdir + datadir}
+  endif
+
+  test(
+    'cargo-test',
+    cargo_bin,
+    args: [
+      'test',
+      '-p',
+      'tests',
+      test_args,
+      '--target-dir',
+      # Not using a separate target dir causes rebuilds for the loaders
+      cargo_target_dir / 'tests',
+      cargo_options,
+      '--',
+      '--test-threads=1',
+      '--nocapture',
+    ],
+    env: env,
+    is_parallel: false,
+    timeout: 1800,
+  )
 endif

@@ -1,5 +1,3 @@
-use std::os::raw::c_int;
-
 use gdk::{gio, glib};
 use gio::prelude::*;
 use glib::error::ErrorDomain;
@@ -38,15 +36,12 @@ pub unsafe extern "C" fn gly_loader_error_get_type() -> glib::ffi::GType {
 pub unsafe fn set_error(g_error: *mut *mut GError, err: &glycin::Error) {
     let gly_error: GlyLoaderError = err.into();
 
-    glib::ffi::g_set_error_literal(
-        g_error,
-        GlyLoaderError::domain().into_glib(),
-        gly_error.code() as c_int,
-        err.to_string().to_glib_none().0,
-    );
+    if !g_error.is_null() {
+        *g_error = glib::Error::new(gly_error, &err.to_string()).into_glib_ptr();
+    }
 }
 
-pub unsafe fn glib_error(err: &glycin::Error) -> glib::Error {
+pub fn glib_error(err: &glycin::Error) -> glib::Error {
     let gly_error: GlyLoaderError = err.into();
     glib::Error::new(gly_error, &err.to_string())
 }

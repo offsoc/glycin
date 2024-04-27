@@ -1,3 +1,4 @@
+use std::ffi::c_int;
 use std::ptr;
 
 use gdk::{gio, glib};
@@ -7,26 +8,27 @@ use glib::ffi::{gpointer, GError, GType};
 use glib::subclass::prelude::*;
 use glib::translate::*;
 use glycin::gobject;
+pub use glycin::SandboxSelector as GlySandboxSelector;
 
 use crate::common::*;
 use crate::*;
 
-pub use glycin::SandboxSelector as GlySandboxSelector;
-
 pub type GlyLoader = <gobject::loader::imp::GlyLoader as ObjectSubclass>::Instance;
 
 #[no_mangle]
-pub unsafe extern "C" fn gly_loader_new(file: *mut gio::ffi::GFile) -> *const GlyLoader {
+pub unsafe extern "C" fn gly_loader_new(file: *mut gio::ffi::GFile) -> *mut GlyLoader {
     let file = gio::File::from_glib_none(file);
-    gobject::GlyLoader::new(file).to_glib_full()
+    gobject::GlyLoader::new(&file).into_glib_ptr()
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn gly_loader_set_sandbox_selector(
     loader: *mut GlyLoader,
-    sandbox_selector: GlySandboxSelector,
+    sandbox_selector: i32,
 ) {
+    let sandbox_selector = GlySandboxSelector::from_glib(sandbox_selector);
     let obj = gobject::GlyLoader::from_glib_none(loader);
+
     obj.set_sandbox_selector(sandbox_selector);
 }
 
@@ -34,13 +36,13 @@ pub unsafe extern "C" fn gly_loader_set_sandbox_selector(
 pub unsafe extern "C" fn gly_loader_load(
     loader: *mut GlyLoader,
     g_error: *mut *mut GError,
-) -> *const GlyImage {
-    let obj = (*loader).imp().obj();
+) -> *mut GlyImage {
+    let obj = gobject::GlyLoader::from_glib_ptr_borrow(&(loader as *const _));
 
     let result = async_io::block_on(obj.load());
 
     match result {
-        Ok(image) => image.to_glib_full(),
+        Ok(image) => image.into_glib_ptr(),
         Err(err) => {
             set_error(g_error, &err);
             ptr::null_mut()
@@ -56,21 +58,28 @@ pub unsafe extern "C" fn gly_loader_load_async(
     user_data: gpointer,
 ) {
     let obj = gobject::GlyLoader::from_glib_none(loader);
-    let cancellable = Option::<gio::Cancellable>::from_glib_borrow(cancellable);
-    let callback = GAsyncReadyCallbackSend(callback.unwrap());
-    let user_data = GPointerSend(user_data);
+    let cancellable = (!cancellable.is_null())
+        .then(|| gio::Cancellable::from_glib_ptr_borrow(&(cancellable as *const _)));
+    let callback = GAsyncReadyCallbackSend::new(callback, user_data);
 
-    if let Some(cancellable) = &*cancellable {
-        obj.set_cancellable(cancellable);
-    }
+    let cancel_signal: Option<CancelledHandlerId> = if let Some(cancellable) = cancellable {
+        cancellable
+            .connect_cancelled(glib::clone!(@weak obj => move |_| obj.cancellable().cancel()))
+    } else {
+        None
+    };
 
-    let closure = glib::clone!(@strong obj => move |task: gio::Task<gobject::GlyImage>, _: Option<&gobject::GlyLoader>| {
+    let closure = move |task: gio::Task<gobject::GlyImage>, obj: Option<&gobject::GlyLoader>| {
+        if let (Some(cancel_signal), Some(cancellable)) = (cancel_signal, cancellable) {
+            cancellable.disconnect_cancelled(cancel_signal);
+        }
+
         let result: *mut gio::ffi::GAsyncResult =
             task.upcast_ref::<gio::AsyncResult>().to_glib_none().0;
-        callback.call(obj, result, user_data);
-    });
+        callback.call(obj.unwrap(), result);
+    };
 
-    let task = gio::Task::new(Some(&obj), (*cancellable).as_ref(), closure);
+    let task = gio::Task::new(Some(&obj), cancellable, closure);
 
     glib::MainContext::ref_thread_default().spawn_local(async move {
         let res = obj.load().await.map_err(|x| glib_error(&x));
@@ -83,11 +92,11 @@ pub unsafe extern "C" fn gly_loader_load_finish(
     _loader: *mut GlyLoader,
     res: *mut GAsyncResult,
     error: *mut *mut GError,
-) -> *const GlyImage {
+) -> *mut GlyImage {
     let task = gio::Task::<gobject::GlyImage>::from_glib_none(res as *mut GTask);
 
     match task.propagate() {
-        Ok(image) => image.to_glib_full(),
+        Ok(image) => image.into_glib_ptr(),
         Err(e) => {
             if !error.is_null() {
                 *error = e.into_glib_ptr();

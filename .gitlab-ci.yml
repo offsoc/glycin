@@ -74,7 +74,7 @@ cargo-deny:
   interruptible: true
   image: rust
   script:
-    - cargo install cargo-deny
+    - cargo install --locked cargo-deny
     - cargo deny check
 
 pages:
