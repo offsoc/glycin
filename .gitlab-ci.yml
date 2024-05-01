@@ -32,7 +32,7 @@ variables:
       - tests/failures
       - builddir/meson-logs
 
-x86_64:
+test-x86_64:
   image: rust:1.75-bookworm
   extends: .install_dependencies
   interruptible: true
@@ -47,7 +47,7 @@ x86_64:
     paths:
       - c-api
 
-#i386:
+#test-i386:
 #  # Use hash to force i386, lookup here <https://hub.docker.com/r/i386/rust/tags>
 #  image: rust@sha256:ade85905b82458a399a2d86bfaebf666e33ed8d70f55328ede3190f313f5957f
 #  extends: .install_dependencies
@@ -58,7 +58,7 @@ x86_64:
 #    - meson install -C builddir
 #    - meson test -vC builddir
 
-aarch64:
+test-aarch64:
   image: rust:1.75-bookworm
   tags:
     - aarch64
@@ -70,22 +70,39 @@ aarch64:
     - meson install -C builddir
     - meson test -vC builddir
 
-cargo-deny:
-  interruptible: true
+
+cargo-semver-checks:
   image: rust
+  extends: .install_dependencies
+  interruptible: true
   script:
-    - cargo install --locked cargo-deny
+    - apt install cmake -y
+    - cargo install cargo-semver-checks --locked
+    - cargo semver-checks
+
+cargo-fmt:
+  image: rust
+  interruptible: true
+  script:
+    - rustup component add rustfmt
+    - cargo fmt --check
+
+cargo-deny:
+  image: rust
+  interruptible: true
+  script:
+    - cargo install cargo-deny --locked
     - cargo deny check
 
 pages:
   stage: deploy
   dependencies:
-    - x86_64
+    - test-x86_64
   script:
     - mkdir public
     - mv c-api public
   artifacts:
     paths:
       - public
-#  rules:
-#    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH

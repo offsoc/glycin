@@ -1,10 +1,21 @@
 [advisories]
-unmaintained = "deny"
+version = 2
 yanked = "deny"
 ignore = [
     #"RUSTSEC-0000-0000",
 ]
 
 [licenses]
-allow-osi-fsf-free = "either"
-copyleft = "allow"
+version = 2
+allow = [
+    "Apache-2.0 WITH LLVM-exception",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "GPL-3.0",
+    "ISC",
+    "LGPL-2.1",
+    "MIT",
+    "MPL-2.0",
+    "Unicode-DFS-2016",
+]
