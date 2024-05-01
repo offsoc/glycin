@@ -34,10 +34,8 @@ pub unsafe extern "C" fn gly_loader_error_get_type() -> glib::ffi::GType {
 }
 
 pub unsafe fn set_error(g_error: *mut *mut GError, err: &glycin::Error) {
-    let gly_error: GlyLoaderError = err.into();
-
     if !g_error.is_null() {
-        *g_error = glib::Error::new(gly_error, &err.to_string()).into_glib_ptr();
+        *g_error = glib_error(err).into_glib_ptr();
     }
 }
 
