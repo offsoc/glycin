@@ -358,9 +358,7 @@ impl Sandbox {
         .saturating_sub(1024 * 1024 * 200);
 
         // Allow usage of 80% of considered memory
-        let limit = (mem_considered as f64 * 0.8) as resource::rlim_t;
-
-        limit
+        (mem_considered as f64 * 0.8) as resource::rlim_t
     }
 
     /// Set memory limit for the current process

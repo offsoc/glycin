@@ -415,7 +415,7 @@ fn seal_fd(fd: impl AsRawFd) -> Result<(), memfd::Error> {
 
         match seal {
             Ok(_) => break,
-            Err(err) if i > 10000 => return Err(err.into()),
+            Err(err) if i > 10000 => return Err(err),
             Err(_) => {}
         }
     }
