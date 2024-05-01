@@ -16,7 +16,7 @@ pub type GlyLoader = <gobject::loader::imp::GlyLoader as ObjectSubclass>::Instan
 
 #[no_mangle]
 pub unsafe extern "C" fn gly_loader_new(file: *mut gio::ffi::GFile) -> *mut GlyLoader {
-    let file = gio::File::from_glib_none(file);
+    let file = gio::File::from_glib_ptr_borrow(&(file as *const _));
     gobject::GlyLoader::new(&file).into_glib_ptr()
 }
 
@@ -26,7 +26,7 @@ pub unsafe extern "C" fn gly_loader_set_sandbox_selector(
     sandbox_selector: i32,
 ) {
     let sandbox_selector = GlySandboxSelector::from_glib(sandbox_selector);
-    let obj = gobject::GlyLoader::from_glib_none(loader);
+    let obj = gobject::GlyLoader::from_glib_ptr_borrow(&(loader as *const _));
 
     obj.set_sandbox_selector(sandbox_selector);
 }
