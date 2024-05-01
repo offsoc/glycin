@@ -63,8 +63,7 @@ pub unsafe extern "C" fn gly_image_next_frame_async(
             cancellable.disconnect_cancelled(cancel_signal);
         }
 
-        let result: *mut gio::ffi::GAsyncResult =
-            task.upcast_ref::<gio::AsyncResult>().to_glib_none().0;
+        let result = task.upcast_ref::<gio::AsyncResult>().as_ptr();
         callback.call(obj.unwrap(), result);
     };
 

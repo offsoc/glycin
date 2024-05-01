@@ -30,7 +30,7 @@ impl GAsyncReadyCallbackSend {
     where
         O: glib::translate::ToGlibPtr<'a, *mut P> + IsA<glib::Object>,
     {
-        let obj_ptr: *mut P = obj.to_glib_none().0;
+        let obj_ptr = obj.as_ptr();
         (self.callback)(obj_ptr as *mut _, res, self.user_data.0)
     }
 }
