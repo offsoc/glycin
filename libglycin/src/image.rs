@@ -46,7 +46,7 @@ pub unsafe extern "C" fn gly_image_next_frame_async(
     callback: GAsyncReadyCallback,
     user_data: gpointer,
 ) {
-    let obj = gobject::GlyImage::from_glib_none(image);
+    let obj = gobject::GlyImage::from_glib_ptr_borrow(&(image as *const _));
     let cancellable = (!cancellable.is_null())
         .then(|| gio::Cancellable::from_glib_ptr_borrow(&(cancellable as *const _)));
     let callback: GAsyncReadyCallbackSend = GAsyncReadyCallbackSend::new(callback, user_data);
@@ -67,7 +67,7 @@ pub unsafe extern "C" fn gly_image_next_frame_async(
         callback.call(obj.unwrap(), result);
     };
 
-    let task = gio::Task::new(Some(&obj), cancellable, closure);
+    let task = gio::Task::new(Some(obj), cancellable, closure);
 
     glib::MainContext::ref_thread_default().spawn_local(async move {
         let res = obj.next_frame().await.map_err(|x| glib_error(&x));
