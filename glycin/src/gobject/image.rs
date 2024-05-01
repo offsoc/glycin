@@ -15,6 +15,7 @@ pub mod imp {
     #[derive(Default, Debug)]
     pub struct GlyImage {
         pub(super) image: OnceLock<Image<'static>>,
+        pub(super) mime_type: OnceLock<glib::GString>,
     }
 
     #[glib::object_subclass]
@@ -52,5 +53,11 @@ impl GlyImage {
 
     pub fn image(&self) -> &Image {
         self.imp().image.get().unwrap()
+    }
+
+    pub fn mime_type(&self) -> &glib::GString {
+        self.imp()
+            .mime_type
+            .get_or_init(|| glib::GString::from(self.imp().image.get().unwrap().mime_type()))
     }
 }

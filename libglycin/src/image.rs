@@ -1,6 +1,5 @@
 use std::ffi::c_char;
 use std::ptr;
-use std::sync::OnceLock;
 
 use gdk::{gio, glib};
 use gio::ffi::{GAsyncReadyCallback, GAsyncResult, GTask};
@@ -8,7 +7,6 @@ use gio::prelude::*;
 use glib::ffi::{gpointer, GError, GType};
 use glib::subclass::prelude::*;
 use glib::translate::*;
-use glib::GString;
 use glycin::gobject;
 
 use crate::common::*;
@@ -96,14 +94,8 @@ pub unsafe extern "C" fn gly_image_next_frame_finish(
 
 #[no_mangle]
 pub unsafe extern "C" fn gly_image_get_mime_type(image: *mut GlyImage) -> *const c_char {
-    static MIME_TYPE: OnceLock<GString> = OnceLock::new();
-
-    let mime_type = MIME_TYPE.get_or_init(|| {
-        let image = gobject::GlyImage::from_glib_ptr_borrow(&(image as *const _));
-        GString::from(image.image().mime_type())
-    });
-
-    mime_type.as_ptr()
+    let image = gobject::GlyImage::from_glib_ptr_borrow(&(image as *const _));
+    image.mime_type().as_ptr()
 }
 
 #[no_mangle]
