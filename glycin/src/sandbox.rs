@@ -328,7 +328,7 @@ impl Sandbox {
         if let Ok(file) = File::open("/proc/meminfo") {
             let meminfo = BufReader::new(file);
 
-            for line in meminfo.lines().flatten() {
+            for line in meminfo.lines().map_while(Result::ok) {
                 if line.starts_with("MemAvailable:") {
                     if let Some(mem_avail_kb) = line
                         .split(' ')
