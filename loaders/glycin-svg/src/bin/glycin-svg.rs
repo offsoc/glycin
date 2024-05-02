@@ -38,7 +38,16 @@ pub fn thread(
 
     let handle = rsvg::Loader::new()
         .read_stream(&input_stream, base_file.as_ref(), gio::Cancellable::NONE)
-        .unwrap();
+        .loading_error();
+
+    let handle = match handle {
+        Ok(handle) => handle,
+        Err(err) => {
+            info_send.send(Err(err)).unwrap();
+            return;
+        }
+    };
+
     let renderer = rsvg::CairoRenderer::new(&handle);
 
     let (original_width, original_height) = svg_dimensions(&renderer);
@@ -74,7 +83,7 @@ pub fn render(renderer: &rsvg::CairoRenderer, instr: Instruction) -> Result<Fram
         area.width() as i32,
         area.height() as i32,
     )
-    .unwrap();
+    .loading_error()?;
 
     let context = cairo::Context::new(&surface).loading_error()?;
 
@@ -100,7 +109,7 @@ pub fn render(renderer: &rsvg::CairoRenderer, instr: Instruction) -> Result<Fram
 
     let mut memory = SharedMemory::new(data.len().try_u64()?).loading_error()?;
 
-    Cursor::new(data).read_exact(&mut memory).unwrap();
+    Cursor::new(data).read_exact(&mut memory).loading_error()?;
     let texture = memory.into_binary_data();
 
     let mut frame = Frame::new(

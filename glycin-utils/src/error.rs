@@ -46,7 +46,7 @@ pub enum LoaderError {
 
 impl LoaderError {
     #[track_caller]
-    pub fn loading(err: &(impl std::error::Error + Send + Sync + 'static)) -> Self {
+    pub fn loading(err: &impl ToString) -> Self {
         Self::LoadingError {
             err: err.to_string(),
             location: *Location::caller(),

@@ -118,10 +118,10 @@ impl Loader {
         let image_info = self
             .decoder
             .lock()
-            .or_else(|err| {
-                Err(RemoteError::InternalLoaderError(format!(
+            .map_err(|err| {
+                RemoteError::InternalLoaderError(format!(
                     "Failed to lock decoder for init(): {err}"
-                )))
+                ))
             })?
             .init(stream, init_request.mime_type, init_request.details)?;
 
@@ -131,10 +131,10 @@ impl Loader {
     async fn frame(&self, frame_request: FrameRequest) -> Result<Frame, RemoteError> {
         self.decoder
             .lock()
-            .or_else(|err| {
-                Err(RemoteError::InternalLoaderError(format!(
+            .map_err(|err| {
+                RemoteError::InternalLoaderError(format!(
                     "Failed to lock decoder for frame(): {err}"
-                )))
+                ))
             })?
             .frame(frame_request)
             .map_err(Into::into)
