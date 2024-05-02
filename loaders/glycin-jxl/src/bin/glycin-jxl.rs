@@ -34,7 +34,10 @@ impl LoaderImplementation for ImgDecoder {
 
         let mut image_info = ImageInfo::new(info.xsize, info.ysize);
         image_info.details.format_name = Some(String::from("JPEG XL"));
-        image_info.details.exif = exif.map(BinaryData::from);
+        image_info.details.exif = exif
+            .map(BinaryData::from_data)
+            .transpose()
+            .loading_error()?;
         image_info.details.transformations_applied = true;
 
         *self.decoder.lock().unwrap() = Some((data, iccp));
@@ -61,7 +64,7 @@ impl LoaderImplementation for ImgDecoder {
         let height = image.height();
 
         let bytes = image.into_bytes();
-        let mut memory = SharedMemory::new(bytes.len() as u64);
+        let mut memory = SharedMemory::new(bytes.len() as u64).loading_error()?;
 
         Cursor::new(memory.as_mut())
             .write_all(&bytes)
@@ -70,7 +73,10 @@ impl LoaderImplementation for ImgDecoder {
 
         let mut frame = Frame::new(width, height, memory_format, texture).loading_error()?;
 
-        frame.details.iccp = iccp.map(BinaryData::from);
+        frame.details.iccp = iccp
+            .map(BinaryData::from_data)
+            .transpose()
+            .loading_error()?;
 
         if bits != 8 {
             frame.details.bit_depth = Some(bits);

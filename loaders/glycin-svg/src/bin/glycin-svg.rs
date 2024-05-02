@@ -98,7 +98,7 @@ pub fn render(renderer: &rsvg::CairoRenderer, instr: Instruction) -> Result<Fram
 
     let data = surface.take_data().internal_error()?.to_vec();
 
-    let mut memory = SharedMemory::new(data.len().try_u64()?);
+    let mut memory = SharedMemory::new(data.len().try_u64()?).loading_error()?;
 
     Cursor::new(data).read_exact(&mut memory).unwrap();
     let texture = memory.into_binary_data();

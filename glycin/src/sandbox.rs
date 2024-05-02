@@ -124,6 +124,7 @@ const ALLOWED_SYSCALLS: &[&str] = &[
     "timerfd_create",
     "timerfd_settime",
     "timerfd_settime64",
+    "tgkill",
     "ugetrlimit",
     "unshare",
     "wait4",
@@ -352,7 +353,7 @@ impl Sandbox {
         // Consider max of 10 GB free RAM for use
         let mem_considered = resource::rlim_t::min(
             mem_available,
-            (1024 as resource::rlim_t * 1024 * 1024).saturating_mul(10),
+            (1024 as resource::rlim_t * 1024 * 1024).saturating_mul(2),
         )
         // Keep at least 200 MB free
         .saturating_sub(1024 * 1024 * 200);

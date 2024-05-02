@@ -84,7 +84,9 @@ fn worker(format: ImageRsFormat<Reader>, data: Reader, mime_type: String, send: 
 
                     let mut memory = SharedMemory::new(
                         u64::from(width) * u64::from(height) * memory_format.n_bytes().u64(),
-                    );
+                    )
+                    .loading_error()
+                    .unwrap();
                     Cursor::new(buffer.into_raw())
                         .read_exact(&mut memory)
                         .unwrap();
@@ -95,7 +97,7 @@ fn worker(format: ImageRsFormat<Reader>, data: Reader, mime_type: String, send: 
 
                     // Set frame info for still pictures
                     if !is_animated {
-                        out_frame.details = frame_details.clone();
+                        out_frame.details = frame_details.as_ref().unwrap().to_owned();
                     };
 
                     send.send(out_frame).unwrap();
@@ -130,7 +132,11 @@ impl LoaderImplementation for ImgDecoder {
         let mut image_info = format.info();
 
         let exif = exif::Reader::new().read_from_container(&mut data.clone());
-        image_info.details.exif = exif.ok().map(|x| BinaryData::from(x.buf().to_vec()));
+        image_info.details.exif = exif
+            .ok()
+            .map(|x| BinaryData::from_data(x.buf().to_vec()))
+            .transpose()
+            .loading_error()?;
 
         if format.decoder.is_animated() {
             let (send, recv) = channel();
@@ -337,7 +343,7 @@ impl<'a, T: std::io::BufRead + std::io::Seek + 'a> ImageRsFormat<T> {
         }
     }
 
-    fn frame_details(&mut self) -> FrameDetails {
+    fn frame_details(&mut self) -> Result<FrameDetails, LoaderError> {
         match self.decoder {
             ImageRsDecoder::Bmp(ref mut d) => self.handler.frame_details(d),
             ImageRsDecoder::Dds(ref mut d) => self.handler.frame_details(d),

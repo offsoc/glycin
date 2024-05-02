@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use zbus::zvariant;
 
-use crate::{BinaryData, SafeConversion};
+use crate::{BinaryData, LoaderError, SafeConversion};
 
 #[derive(Debug)]
 pub struct SharedMemory {
@@ -14,7 +14,7 @@ pub struct SharedMemory {
 }
 
 impl SharedMemory {
-    pub fn new(size: u64) -> Self {
+    pub fn new(size: u64) -> Result<Self, LoaderError> {
         let memfd = nix::sys::memfd::memfd_create(
             &CString::new("glycin-frame").unwrap(),
             nix::sys::memfd::MemFdCreateFlag::MFD_CLOEXEC
@@ -26,9 +26,15 @@ impl SharedMemory {
             .expect("Failed to set memfd size");
 
         let raw_fd = memfd.as_raw_fd();
-        let mmap = unsafe { memmap::MmapMut::map_mut(raw_fd) }.expect("Mailed to mmap memfd");
+        let mmap = unsafe { memmap::MmapMut::map_mut(raw_fd) }.map_err(|err| {
+            if err.kind() == std::io::ErrorKind::OutOfMemory {
+                LoaderError::out_of_memory()
+            } else {
+                LoaderError::loading(&err)
+            }
+        })?;
 
-        Self { mmap, memfd }
+        Ok(Self { mmap, memfd })
     }
 
     pub fn into_binary_data(self) -> BinaryData {
@@ -39,25 +45,25 @@ impl SharedMemory {
     }
 }
 
-impl<T: AsRef<[u8]>> From<T> for SharedMemory {
-    fn from(value: T) -> Self {
+impl SharedMemory {
+    fn from_data(value: impl AsRef<[u8]>) -> Result<Self, LoaderError> {
         let mut shared_memory = SharedMemory::new(
             value
                 .as_ref()
                 .len()
                 .try_u64()
                 .expect("Required memory too large"),
-        );
+        )?;
 
         shared_memory.copy_from_slice(value.as_ref());
 
-        shared_memory
+        Ok(shared_memory)
     }
 }
 
-impl<T: AsRef<[u8]>> From<T> for BinaryData {
-    fn from(value: T) -> Self {
-        SharedMemory::from(value).into_binary_data()
+impl BinaryData {
+    pub fn from_data(value: impl AsRef<[u8]>) -> Result<Self, LoaderError> {
+        Ok(SharedMemory::from_data(value)?.into_binary_data())
     }
 }
 

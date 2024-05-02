@@ -49,19 +49,28 @@ impl Handler {
         let memory_format = MemoryFormat::from(color_type);
         let (width, height) = decoder.dimensions();
 
-        let mut memory = SharedMemory::new(decoder.total_bytes());
+        let mut memory = SharedMemory::new(decoder.total_bytes()).loading_error()?;
         decoder.read_image(&mut memory).loading_error()?;
         let texture = memory.into_binary_data();
 
         let mut frame = Frame::new(width, height, memory_format, texture)?;
-        frame.details = details;
+        frame.details = details.loading_error()?;
 
         Ok(frame)
     }
 
-    pub fn frame_details(&self, decoder: &mut impl image::ImageDecoder) -> FrameDetails {
+    pub fn frame_details(
+        &self,
+        decoder: &mut impl image::ImageDecoder,
+    ) -> Result<FrameDetails, LoaderError> {
         let mut details = FrameDetails {
-            iccp: decoder.icc_profile().ok().flatten().map(BinaryData::from),
+            iccp: decoder
+                .icc_profile()
+                .ok()
+                .flatten()
+                .map(BinaryData::from_data)
+                .transpose()
+                .loading_error()?,
             ..Default::default()
         };
 
@@ -79,7 +88,7 @@ impl Handler {
             }
         }
 
-        details
+        Ok(details)
     }
 }
 

@@ -1,3 +1,5 @@
+use std::any::Any;
+
 #[derive(zbus::DBusError, Debug, Clone)]
 #[zbus(prefix = "org.gnome.glycin.Error")]
 #[non_exhaustive]
@@ -8,6 +10,7 @@ pub enum RemoteError {
     InternalLoaderError(String),
     UnsupportedImageFormat(String),
     ConversionTooLargerError,
+    OutOfMemory(String),
 }
 
 type Location = std::panic::Location<'static>;
@@ -21,6 +24,7 @@ impl From<LoaderError> for RemoteError {
             }
             LoaderError::UnsupportedImageFormat(msg) => Self::UnsupportedImageFormat(msg),
             LoaderError::ConversionTooLargerError => Self::ConversionTooLargerError,
+            err @ LoaderError::OutOfMemory { .. } => Self::OutOfMemory(err.to_string()),
         }
     }
 }
@@ -30,12 +34,31 @@ impl From<LoaderError> for RemoteError {
 pub enum LoaderError {
     #[error("{location}: {err}")]
     LoadingError { err: String, location: Location },
-    #[error("inernal error: {location}: {err}")]
+    #[error("{location}: Internal error: {err}")]
     InternalLoaderError { err: String, location: Location },
     #[error("Unsupported image format: {0}")]
     UnsupportedImageFormat(String),
     #[error("Dimension too large for system")]
     ConversionTooLargerError,
+    #[error("{location}: Not enough memory available")]
+    OutOfMemory { location: Location },
+}
+
+impl LoaderError {
+    #[track_caller]
+    pub fn loading(err: &(impl std::error::Error + Send + Sync + 'static)) -> Self {
+        Self::LoadingError {
+            err: err.to_string(),
+            location: *Location::caller(),
+        }
+    }
+
+    #[track_caller]
+    pub fn out_of_memory() -> Self {
+        Self::OutOfMemory {
+            location: *Location::caller(),
+        }
+    }
 }
 
 impl From<DimensionTooLargerError> for LoaderError {
@@ -52,16 +75,23 @@ pub trait GenericContexts<T> {
 
 impl<T, E> GenericContexts<T> for Result<T, E>
 where
-    E: std::error::Error + Send + Sync + 'static,
+    E: std::error::Error + Any + Send + Sync + 'static,
 {
     #[track_caller]
     fn loading_error(self) -> Result<T, LoaderError> {
         match self {
             Ok(x) => Ok(x),
-            Err(err) => Err(LoaderError::LoadingError {
-                err: err.to_string(),
-                location: *Location::caller(),
-            }),
+            Err(err) => Err(
+                if let Some(err) = ((&err) as &dyn Any).downcast_ref::<LoaderError>() {
+                    if matches!(err, LoaderError::OutOfMemory { .. }) {
+                        LoaderError::out_of_memory()
+                    } else {
+                        LoaderError::loading(err)
+                    }
+                } else {
+                    LoaderError::loading(&err)
+                },
+            ),
         }
     }
 
