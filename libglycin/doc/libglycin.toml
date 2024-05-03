@@ -1,6 +1,6 @@
 [library]
 version = "1.0"
-description = "Building blocks for modern GNOME applications"
+description = "Sandboxed and extendable image loading"
 authors = "Sophie Herold"
 license = "MPL-2.0 OR LGPL-2.1-or-later"
 browse_url = "https://gitlab.gnome.org/sophie-h/glycin/"
