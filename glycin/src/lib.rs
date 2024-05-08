@@ -32,6 +32,7 @@
 mod api;
 mod config;
 mod dbus;
+mod default_formats;
 mod error;
 
 #[cfg(feature = "gobject")]
@@ -41,5 +42,6 @@ mod sandbox;
 
 pub use api::*;
 pub use config::COMPAT_VERSION;
+pub use default_formats::DEFAULT_MIME_TYPES;
 pub use error::Error;
 pub use glycin_utils::{ImageInfo, ImageInfoDetails, RemoteError};
