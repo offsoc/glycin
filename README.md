@@ -3,8 +3,9 @@
 Glycin allows to decode images into [`gdk::Texture`](https://gtk-rs.org/gtk4-rs/stable/latest/docs/gdk4/struct.Texture.html)s and to extract image metadata.
 The decoding happens in sandboxed modular *image loaders*.
 
-- [glycin](glycin) – The image library
-- [glycin-utils](glycin-utils) – Utilities to write loaders for glycin
+- [glycin](https://docs.rs/glycin/) – The image library
+    - [libglycin](https://sophie-h.pages.gitlab.gnome.org/glycin/c-api/) – C-Bindings for the library
+- [glycin-utils](https://docs.rs/glycin-utils/) – Utilities to write loaders for glycin
 - [loaders](loaders) – Glycin loaders for several formats
 
 ## Example
@@ -16,6 +17,10 @@ let image = Loader::new(file).load().await?;
 let height = image.info().height;
 let texture = image.next_frame().await?.texture;
 ```
+
+## Limitations
+
+Glycin is based on technologies like memfds, unix sockets, and linux namespaces. It currently only works on Linux. An adoption to other unixoid systems could be possible without usage of the sandbox mechanism. Windows support is currently not planned and might not be feasible.
 
 ## Image loader configuration
 
@@ -44,10 +49,10 @@ Where the part behind `loader` is a mime-type and the value of `Exec` can be any
 
 Not every new major version of the library has to break compatibility with the loaders. If a glycin version X breaks compatibility, the new compativility version will be called X+. Only glycin X and newer version will be compatible with X+ until a new compatibilityv version is used. The definition of the API of each compatibility version is available in [`docs/`](docs/). The following compatibility versions currently exist
 
-| compat-version | Compatible With |
-|----------------|-----------------|
-| 0+             | glycin 0.x      |
-| 1+             | glycin 1.x      |
+| compat-version | Compatible With                |
+|----------------|--------------------------------|
+| 0+             | glycin 0.x                     |
+| 1+             | glycin 1.x, libglycin 1.x      |
 
 ## Supported image formats
 
