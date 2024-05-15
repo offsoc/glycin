@@ -33,7 +33,7 @@ variables:
       - builddir/meson-logs
 
 test-x86_64:
-  image: rust:1.75-bookworm
+  image: rust:1.78-bookworm
   extends: .install_dependencies
   interruptible: true
   script:
@@ -59,7 +59,7 @@ test-x86_64:
 #    - meson test -vC builddir
 
 test-aarch64:
-  image: rust:1.75-bookworm
+  image: rust:1.78-bookworm
   tags:
     - aarch64
   extends: .install_dependencies
