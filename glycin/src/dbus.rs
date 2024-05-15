@@ -3,7 +3,7 @@
 //! Internal DBus API
 
 use std::mem;
-use std::os::fd::{AsRawFd, OwnedFd};
+use std::os::fd::{AsRawFd, OwnedFd, RawFd};
 use std::os::unix::net::UnixStream;
 use std::sync::Arc;
 
@@ -162,8 +162,7 @@ impl<'a> DecoderProcess<'a> {
         }
 
         let raw_fd = frame.texture.as_raw_fd();
-        let borrowed_fd = unsafe { std::os::fd::BorrowedFd::borrow_raw(raw_fd) };
-        let mut original_mmap = unsafe { memmap::MmapMut::map_mut(raw_fd) }?;
+        let original_mmap = unsafe { memmap::MmapMut::map_mut(raw_fd) }?;
 
         if original_mmap.len() < frame.n_bytes()? {
             return Err(Error::TextureTooSmall {
@@ -183,32 +182,7 @@ impl<'a> DecoderProcess<'a> {
         if let Some(Ok(icc_profile)) = frame.details.iccp.as_ref().map(|x| x.get()) {
             // Align stride with pixel size if necessary
             let icc_mmap = if frame.stride.srem(frame.memory_format.n_bytes().u32())? != 0 {
-                let width = frame
-                    .width
-                    .try_usize()?
-                    .smul(frame.memory_format.n_bytes().usize())?;
-                let stride = frame.stride.try_usize()?;
-                let mut source = vec![0; width];
-                for row in 1..frame.height.try_usize()? {
-                    source.copy_from_slice(
-                        &original_mmap[row.smul(stride)?..row.smul(stride)?.sadd(width)?],
-                    );
-                    original_mmap[row.smul(width)?..row.sadd(1)?.smul(width)?]
-                        .copy_from_slice(&source);
-                }
-                frame.stride = width.try_u32()?;
-
-                // This mmap would have the wrong size after ftruncate
-                drop(original_mmap);
-
-                nix::unistd::ftruncate(
-                    borrowed_fd,
-                    libc::off_t::try_from(frame.n_bytes()?).map_err(|_| DimensionTooLargerError)?,
-                )
-                .unwrap();
-
-                // Need a new mmap with correct size
-                unsafe { memmap::MmapMut::map_mut(raw_fd) }?
+                remove_stride(&mut frame, original_mmap, raw_fd)?
             } else {
                 original_mmap
             };
@@ -228,24 +202,7 @@ impl<'a> DecoderProcess<'a> {
 
         seal_fd(raw_fd)?;
 
-        let bytes: glib::Bytes = unsafe {
-            let mut error = std::ptr::null_mut();
-
-            let mapped_file =
-                glib::ffi::g_mapped_file_new_from_fd(raw_fd, glib::ffi::GFALSE, &mut error);
-
-            if !error.is_null() {
-                let err: glib::Error = glib::translate::from_glib_full(error);
-                return Err(err.into());
-            };
-
-            let bytes =
-                glib::translate::from_glib_full(glib::ffi::g_mapped_file_get_bytes(mapped_file));
-
-            glib::ffi::g_mapped_file_unref(mapped_file);
-
-            bytes
-        };
+        let bytes: glib::Bytes = unsafe { gbytes_from_mmap(raw_fd)? };
 
         let texture = gdk::MemoryTexture::new(
             frame.width.try_i32()?,
@@ -422,4 +379,53 @@ fn seal_fd(fd: impl AsRawFd) -> Result<(), memfd::Error> {
     mem::forget(mfd);
 
     Ok(())
+}
+
+unsafe fn gbytes_from_mmap(raw_fd: RawFd) -> Result<glib::Bytes, Error> {
+    let mut error = std::ptr::null_mut();
+
+    let mapped_file = glib::ffi::g_mapped_file_new_from_fd(raw_fd, glib::ffi::GFALSE, &mut error);
+
+    if !error.is_null() {
+        let err: glib::Error = glib::translate::from_glib_full(error);
+        return Err(err.into());
+    };
+
+    let bytes = glib::translate::from_glib_full(glib::ffi::g_mapped_file_get_bytes(mapped_file));
+
+    glib::ffi::g_mapped_file_unref(mapped_file);
+
+    Ok(bytes)
+}
+
+fn remove_stride(
+    frame: &mut Frame,
+    mut original_mmap: memmap::MmapMut,
+    raw_fd: RawFd,
+) -> Result<memmap::MmapMut, Error> {
+    let borrowed_fd = unsafe { std::os::fd::BorrowedFd::borrow_raw(raw_fd) };
+
+    let width = frame
+        .width
+        .try_usize()?
+        .smul(frame.memory_format.n_bytes().usize())?;
+    let stride = frame.stride.try_usize()?;
+    let mut source = vec![0; width];
+    for row in 1..frame.height.try_usize()? {
+        source.copy_from_slice(&original_mmap[row.smul(stride)?..row.smul(stride)?.sadd(width)?]);
+        original_mmap[row.smul(width)?..row.sadd(1)?.smul(width)?].copy_from_slice(&source);
+    }
+    frame.stride = width.try_u32()?;
+
+    // This mmap would have the wrong size after ftruncate
+    drop(original_mmap);
+
+    nix::unistd::ftruncate(
+        borrowed_fd,
+        libc::off_t::try_from(frame.n_bytes()?).map_err(|_| DimensionTooLargerError)?,
+    )
+    .unwrap();
+
+    // Need a new mmap with correct size
+    unsafe { memmap::MmapMut::map_mut(raw_fd) }.map_err(Into::into)
 }

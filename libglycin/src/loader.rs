@@ -61,7 +61,7 @@ pub unsafe extern "C" fn gly_loader_load_async(
         .then(|| gio::Cancellable::from_glib_ptr_borrow(&(cancellable as *const _)));
     let callback = GAsyncReadyCallbackSend::new(callback, user_data);
 
-    let cancel_signal: Option<CancelledHandlerId> = if let Some(cancellable) = cancellable {
+    let cancel_signal = if let Some(cancellable) = cancellable {
         cancellable
             .connect_cancelled(glib::clone!(@weak obj => move |_| obj.cancellable().cancel()))
     } else {
