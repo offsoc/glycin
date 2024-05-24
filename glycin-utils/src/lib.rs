@@ -20,6 +20,8 @@ pub mod shared_memory;
 #[doc(no_inline)]
 pub use std::os::unix::net::UnixStream;
 
+pub mod operations;
+
 pub use dbus::*;
 pub use error::*;
 #[cfg(feature = "loader-utils")]
