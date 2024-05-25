@@ -8,12 +8,12 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dev-dependencies]
-glycin = { path = "../glycin/" }
-glycin-utils = { path = "../glycin-utils/", features = ["loader-utils"] }
-gio = "0.19.0"
-async-global-executor = "2.3.0"
-gdk = { package = "gdk4", version = "0.8.0" }
-zbus = { version = "4.0.0", features = ["p2p"] }
+glycin.workspace = true
+glycin-utils = { workspace = true, features = ["loader-utils"] }
+gio.workspace = true
+async-global-executor.workspace = true
+gdk.workspace = true
+zbus = { workspace = true, features = ["p2p"] }
 
 [[test]]
 name = "tests"

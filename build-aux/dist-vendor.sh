@@ -19,19 +19,11 @@ cat Cargo.toml
 
 # Use crates.io libraries
 VERSION="$($MESON_PROJECT_SOURCE_ROOT/build-aux/crates-version.py)"
-for toml in $(find loaders/ -name Cargo.toml); do
-  sed -i "s/path = \"..\/..\/glycin-utils\/\"/version = \"$VERSION\"/g" "$toml"
-done
 
-sed -i "s/path = \"..\/glycin\/\"/version = \"$VERSION\"/g" tests/Cargo.toml
-sed -i "s/path = \"..\/glycin-utils\/\"/version = \"$VERSION\"/g" tests/Cargo.toml
+sed -i "s/, path = \"glycin-utils\/\"//g" Cargo.toml
+sed -i "s/path = \"glycin\/\"/version = \"$VERSION\"/g" Cargo.toml
 
-# Trigger update in Cargo.lock
-for toml in $(find loaders/ tests/ -name Cargo.toml); do
-  cargo add --manifest-path="$toml" glycin-utils@$VERSION
-done
-
-cargo add --manifest-path=tests/Cargo.toml glycin@$VERSION
+cargo update glycin glycin-utils
 
 # Vendor crates.io dependencies
 mkdir .cargo

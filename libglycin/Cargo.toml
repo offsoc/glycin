@@ -10,10 +10,10 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-async-io = "2.3.2"
-futures-task = "0.3.30"
-gdk = { package = "gdk4", version = "0.8.0" }
-glycin = { path = "../glycin", features = ["gobject"] }
+async-io.workspace = true
+futures-task.workspace = true
+gdk.workspace = true
+glycin = { workspace = true, features = ["gobject"] }
 
 [lib]
 name = "glycin"
