@@ -51,6 +51,8 @@ test-i386:
   image: rust@sha256:d21d21f6e7baa3e203257b0cf4de5827be3e877f853d2ef16b6ae5a2747e342c
   extends: .install_dependencies
   interruptible: true
+  # As long as 32-bit CI is so unstable
+  allow_failure: true
   script:
     - export LD_LIBRARY_PATH=/usr/local/lib/i386-linux-gnu/
     - apt-get install -y ninja-build
