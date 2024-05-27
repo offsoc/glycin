@@ -20,8 +20,9 @@ use nix::sys::signal;
 use zbus::zvariant;
 
 use crate::api::{self, SandboxMechanism};
+use crate::orientation::Data;
 use crate::sandbox::Sandbox;
-use crate::{config, Error};
+use crate::{config, icc, orientation, Error};
 
 #[derive(Clone, Debug)]
 pub struct DecoderProcess<'a> {
@@ -153,7 +154,11 @@ impl<'a> DecoderProcess<'a> {
         Ok(image_info)
     }
 
-    pub async fn decode_frame(&self, frame_request: FrameRequest) -> Result<api::Frame, Error> {
+    pub async fn request_frame(
+        &self,
+        frame_request: FrameRequest,
+        image_info: &ImageInfo,
+    ) -> Result<api::Frame, Error> {
         let mut frame = self.decoding_instruction.frame(frame_request).await?;
 
         // Seal all constant data
@@ -179,30 +184,55 @@ impl<'a> DecoderProcess<'a> {
             return Err(Error::WidgthOrHeightZero(format!("{:?}", frame)));
         }
 
-        if let Some(Ok(icc_profile)) = frame.details.iccp.as_ref().map(|x| x.get()) {
+        let mut mmap = if let Some(Ok(icc_profile)) = frame.details.iccp.as_ref().map(|x| x.get()) {
             // Align stride with pixel size if necessary
-            let icc_mmap = if frame.stride.srem(frame.memory_format.n_bytes().u32())? != 0 {
+            let mut icc_mmap = if frame.stride.srem(frame.memory_format.n_bytes().u32())? != 0 {
                 remove_stride(&mut frame, original_mmap, raw_fd)?
             } else {
                 original_mmap
             };
 
             let memory_format = frame.memory_format;
-            let icc_result = spawn_blocking(move || {
-                crate::icc::apply_transformation(&icc_profile, memory_format, icc_mmap)
+            let (icc_mmap, icc_result) = spawn_blocking(move || {
+                let result = icc::apply_transformation(&icc_profile, memory_format, &mut icc_mmap);
+                (icc_mmap, result)
             })
             .await;
 
             if let Err(err) = icc_result {
                 eprintln!("Failed to apply ICC profile: {err}");
             }
+
+            icc_mmap
         } else {
-            drop(original_mmap);
-        }
+            original_mmap
+        };
 
-        seal_fd(raw_fd)?;
+        let current_img_buf = if let Some(exif_data) = image_info
+            .details
+            .exif
+            .as_ref()
+            .and_then(|x| x.get_full().ok())
+        {
+            match gufo_exif::Exif::new(exif_data) {
+                Err(err) => {
+                    eprintln!("exif: Failed to parse data: {err:?}");
+                    Data::MMap(&mut mmap)
+                }
+                Ok(data) => orientation::transform(&mut mmap, &mut frame, data.orientation()),
+            }
+        } else {
+            Data::MMap(&mut mmap)
+        };
 
-        let bytes: glib::Bytes = unsafe { gbytes_from_mmap(raw_fd)? };
+        let bytes = match current_img_buf {
+            Data::MMap(_) => {
+                drop(mmap);
+                seal_fd(raw_fd)?;
+                unsafe { gbytes_from_mmap(raw_fd)? }
+            }
+            Data::Vec(vec) => glib::Bytes::from_owned(vec),
+        };
 
         let texture = gdk::MemoryTexture::new(
             frame.width.try_i32()?,

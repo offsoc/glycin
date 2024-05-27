@@ -24,6 +24,8 @@ futures-util.workspace = true
 gdk.workspace = true
 gio.workspace = true
 glycin-utils = { workspace = true }
+gufo-common = { git = "https://github.com/gufo-rs/gufo.git", version = "0.1.0" }
+gufo-exif = { git = "https://github.com/gufo-rs/gufo.git", version = "0.1.0" }
 lcms2.workspace = true
 lcms2-sys.workspace = true
 libc.workspace = true

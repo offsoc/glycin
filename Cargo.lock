@@ -1231,6 +1231,8 @@ dependencies = [
  "gdk4",
  "gio",
  "glycin-utils",
+ "gufo-common",
+ "gufo-exif",
  "lcms2",
  "lcms2-sys",
  "libc",
@@ -1313,11 +1315,19 @@ dependencies = [
 [[package]]
 name = "gufo-common"
 version = "0.1.0"
-source = "git+https://github.com/gufo-rs/gufo.git#f6704953eaa3d335fdf27601951c4efc11c53c9a"
+source = "git+https://github.com/gufo-rs/gufo.git#bae0a89920859c657cb971910083acba7b1a7fa8"
 dependencies = [
  "once_cell",
  "paste",
  "serde",
+]
+
+[[package]]
+name = "gufo-exif"
+version = "0.1.0"
+source = "git+https://github.com/gufo-rs/gufo.git#bae0a89920859c657cb971910083acba7b1a7fa8"
+dependencies = [
+ "gufo-common",
 ]
 
 [[package]]

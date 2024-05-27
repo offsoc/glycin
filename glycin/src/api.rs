@@ -188,7 +188,7 @@ impl<'a> Image<'a> {
     /// function will loop to the first frame, when the last frame is reached.
     pub async fn next_frame(&self) -> Result<Frame> {
         self.process
-            .decode_frame(glycin_utils::FrameRequest::default())
+            .request_frame(glycin_utils::FrameRequest::default(), &self.info)
             .await
             .map_err(Into::into)
     }
@@ -199,7 +199,7 @@ impl<'a> Image<'a> {
     /// instructions in the `FrameRequest`.
     pub async fn specific_frame(&self, frame_request: FrameRequest) -> Result<Frame> {
         self.process
-            .decode_frame(frame_request.request)
+            .request_frame(frame_request.request, &self.info)
             .await
             .map_err(Into::into)
     }

@@ -34,11 +34,12 @@ mod config;
 mod dbus;
 mod default_formats;
 mod error;
+mod icc;
+mod orientation;
+mod sandbox;
 
 #[cfg(feature = "gobject")]
 pub mod gobject;
-mod icc;
-mod sandbox;
 
 pub use api::*;
 pub use config::COMPAT_VERSION;

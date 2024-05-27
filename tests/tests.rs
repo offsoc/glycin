@@ -5,32 +5,37 @@ use gdk::prelude::*;
 
 #[test]
 fn color() {
-    async_global_executor::block_on(test_dir("test-images/images/color"));
+    test_dir("test-images/images/color");
+}
+
+#[test]
+fn color_exif_orientation() {
+    test_dir_no_exif("test-images/images/color-exif-orientation");
 }
 
 #[test]
 fn color_iccp_pro() {
-    async_global_executor::block_on(test_dir("test-images/images/color-iccp-pro"));
+    test_dir("test-images/images/color-iccp-pro");
 }
 
 #[test]
 fn gray_iccp() {
-    async_global_executor::block_on(test_dir("test-images/images/gray-iccp"));
+    test_dir("test-images/images/gray-iccp");
 }
 
 #[test]
 fn icon() {
-    async_global_executor::block_on(test_dir("test-images/images/icon"));
+    test_dir("test-images/images/icon");
 }
 
 #[test]
 fn exif() {
-    async_global_executor::block_on(test_dir("test-images/images/exif"));
+    test_dir("test-images/images/exif");
 }
 
 #[test]
 fn fonts() {
-    async_global_executor::block_on(test_dir("test-images/images/fonts"));
+    test_dir("test-images/images/fonts");
 }
 
 #[allow(dead_code)]
@@ -47,7 +52,15 @@ impl TestResult {
     }
 }
 
-async fn test_dir(dir: impl AsRef<Path>) {
+fn test_dir(dir: impl AsRef<Path>) {
+    async_global_executor::block_on(test_dir_options(dir, true));
+}
+
+fn test_dir_no_exif(dir: impl AsRef<Path>) {
+    async_global_executor::block_on(test_dir_options(dir, false));
+}
+
+async fn test_dir_options(dir: impl AsRef<Path>, exif: bool) {
     let images = std::fs::read_dir(&dir).unwrap();
 
     let skip_ext: Vec<_> = option_env!("GLYCIN_TEST_SKIP_EXT")
@@ -70,7 +83,7 @@ async fn test_dir(dir: impl AsRef<Path>) {
             continue;
         }
 
-        let result = compare_images(&reference_path, &path).await;
+        let result = compare_images(&reference_path, &path, exif).await;
 
         if result.is_failed() {
             some_failed = true;
@@ -84,7 +97,11 @@ async fn test_dir(dir: impl AsRef<Path>) {
     assert!(!some_failed, "{list:#?}");
 }
 
-async fn compare_images(reference_path: impl AsRef<Path>, path: impl AsRef<Path>) -> TestResult {
+async fn compare_images(
+    reference_path: impl AsRef<Path>,
+    path: impl AsRef<Path>,
+    test_exif: bool,
+) -> TestResult {
     let reference_data = get_downloaded_texture(&reference_path).await;
     let data = get_downloaded_texture(&path).await;
 
@@ -112,7 +129,9 @@ async fn compare_images(reference_path: impl AsRef<Path>, path: impl AsRef<Path>
         .map(|x| x.get().unwrap());
     let exif = get_info(&path).await.details.exif.map(|x| x.get().unwrap());
 
-    let exif_eq = if reference_exif.is_none() && path.as_ref().extension().unwrap() == "tiff" {
+    let exif_eq = if !test_exif
+        || (reference_exif.is_none() && path.as_ref().extension().unwrap() == "tiff")
+    {
         true
     } else {
         reference_exif.as_ref().map(|x| &x[..2]) == exif.as_ref().map(|x| &x[..2])

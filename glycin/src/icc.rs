@@ -1,16 +1,13 @@
 use glycin_utils::MemoryFormat;
-use memmap::MmapMut;
 
 use crate::Result;
 
 pub fn apply_transformation(
     iccp: &[u8],
     memory_format: MemoryFormat,
-    mut mmap: MmapMut,
+    mmap: &mut [u8],
 ) -> Result<()> {
-    let result = transform(iccp, memory_format, &mut mmap).map_err(Into::into);
-    drop(mmap);
-    result
+    transform(iccp, memory_format, mmap).map_err(Into::into)
 }
 
 fn transform(
