@@ -79,6 +79,7 @@ impl SandboxSelector {
 pub struct Loader {
     file: gio::File,
     cancellable: gio::Cancellable,
+    pub(crate) apply_transformations: bool,
     pub(crate) sandbox_mechanism: SandboxSelector,
 }
 
@@ -88,6 +89,7 @@ impl Loader {
         Self {
             file,
             cancellable: gio::Cancellable::new(),
+            apply_transformations: true,
             sandbox_mechanism: SandboxSelector::default(),
         }
     }
@@ -105,6 +107,17 @@ impl Loader {
     /// Set [`Cancellable`](gio::Cancellable) to cancel any loader operations
     pub fn cancellable(&mut self, cancellable: impl IsA<gio::Cancellable>) -> &mut Self {
         self.cancellable = cancellable.upcast();
+        self
+    }
+
+    /// Set whether to apply transformations to texture
+    ///
+    /// When enabled, transformations like image orientation are applied to the
+    /// texture data.
+    ///
+    /// This option is enabled by default.
+    pub fn apply_transformations(&mut self, apply_transformations: bool) -> &mut Self {
+        self.apply_transformations = apply_transformations;
         self
     }
 
@@ -173,7 +186,7 @@ impl Loader {
 /// Image handle containing metadata and allowing frame requests
 #[derive(Debug)]
 pub struct Image<'a> {
-    loader: Loader,
+    pub(crate) loader: Loader,
     process: DecoderProcess<'a>,
     info: ImageInfo,
     mime_type: MimeType,
@@ -188,7 +201,7 @@ impl<'a> Image<'a> {
     /// function will loop to the first frame, when the last frame is reached.
     pub async fn next_frame(&self) -> Result<Frame> {
         self.process
-            .request_frame(glycin_utils::FrameRequest::default(), &self.info)
+            .request_frame(glycin_utils::FrameRequest::default(), &self)
             .await
             .map_err(Into::into)
     }
@@ -199,7 +212,7 @@ impl<'a> Image<'a> {
     /// instructions in the `FrameRequest`.
     pub async fn specific_frame(&self, frame_request: FrameRequest) -> Result<Frame> {
         self.process
-            .request_frame(frame_request.request, &self.info)
+            .request_frame(frame_request.request, &self)
             .await
             .map_err(Into::into)
     }

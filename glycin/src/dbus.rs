@@ -20,9 +20,8 @@ use nix::sys::signal;
 use zbus::zvariant;
 
 use crate::api::{self, SandboxMechanism};
-use crate::orientation::Data;
 use crate::sandbox::Sandbox;
-use crate::{config, icc, orientation, Error};
+use crate::{config, icc, orientation, Error, Image};
 
 #[derive(Clone, Debug)]
 pub struct DecoderProcess<'a> {
@@ -154,10 +153,10 @@ impl<'a> DecoderProcess<'a> {
         Ok(image_info)
     }
 
-    pub async fn request_frame(
+    pub async fn request_frame<'b>(
         &self,
         frame_request: FrameRequest,
-        image_info: &ImageInfo,
+        image: &Image<'b>,
     ) -> Result<api::Frame, Error> {
         let mut frame = self.decoding_instruction.frame(frame_request).await?;
 
@@ -184,18 +183,22 @@ impl<'a> DecoderProcess<'a> {
             return Err(Error::WidgthOrHeightZero(format!("{:?}", frame)));
         }
 
-        let mut mmap = if let Some(Ok(icc_profile)) = frame.details.iccp.as_ref().map(|x| x.get()) {
+        let img_buf = ImgBuf::MMap(original_mmap);
+
+        let img_buf = if image.loader.apply_transformations {
+            orientation::apply_exif_orientation(img_buf, &mut frame, image.info())
+        } else {
+            img_buf
+        };
+
+        let img_buf = if let Some(Ok(icc_profile)) = frame.details.iccp.as_ref().map(|x| x.get()) {
             // Align stride with pixel size if necessary
-            let mut icc_mmap = if frame.stride.srem(frame.memory_format.n_bytes().u32())? != 0 {
-                remove_stride(&mut frame, original_mmap, raw_fd)?
-            } else {
-                original_mmap
-            };
+            let mut img_buf = remove_stride_if_needed(img_buf, raw_fd, &mut frame)?;
 
             let memory_format = frame.memory_format;
             let (icc_mmap, icc_result) = spawn_blocking(move || {
-                let result = icc::apply_transformation(&icc_profile, memory_format, &mut icc_mmap);
-                (icc_mmap, result)
+                let result = icc::apply_transformation(&icc_profile, memory_format, &mut img_buf);
+                (img_buf, result)
             })
             .await;
 
@@ -205,33 +208,16 @@ impl<'a> DecoderProcess<'a> {
 
             icc_mmap
         } else {
-            original_mmap
+            img_buf
         };
 
-        let current_img_buf = if let Some(exif_data) = image_info
-            .details
-            .exif
-            .as_ref()
-            .and_then(|x| x.get_full().ok())
-        {
-            match gufo_exif::Exif::new(exif_data) {
-                Err(err) => {
-                    eprintln!("exif: Failed to parse data: {err:?}");
-                    Data::MMap(&mut mmap)
-                }
-                Ok(data) => orientation::transform(&mut mmap, &mut frame, data.orientation()),
-            }
-        } else {
-            Data::MMap(&mut mmap)
-        };
-
-        let bytes = match current_img_buf {
-            Data::MMap(_) => {
+        let bytes = match img_buf {
+            ImgBuf::MMap(mmap) => {
                 drop(mmap);
                 seal_fd(raw_fd)?;
                 unsafe { gbytes_from_mmap(raw_fd)? }
             }
-            Data::Vec(vec) => glib::Bytes::from_owned(vec),
+            ImgBuf::Vec(vec) => glib::Bytes::from_owned(vec),
         };
 
         let texture = gdk::MemoryTexture::new(
@@ -428,34 +414,79 @@ unsafe fn gbytes_from_mmap(raw_fd: RawFd) -> Result<glib::Bytes, Error> {
     Ok(bytes)
 }
 
-fn remove_stride(
-    frame: &mut Frame,
-    mut original_mmap: memmap::MmapMut,
+fn remove_stride_if_needed(
+    img_buf: ImgBuf,
     raw_fd: RawFd,
-) -> Result<memmap::MmapMut, Error> {
-    let borrowed_fd = unsafe { std::os::fd::BorrowedFd::borrow_raw(raw_fd) };
-
-    let width = frame
-        .width
-        .try_usize()?
-        .smul(frame.memory_format.n_bytes().usize())?;
-    let stride = frame.stride.try_usize()?;
-    let mut source = vec![0; width];
-    for row in 1..frame.height.try_usize()? {
-        source.copy_from_slice(&original_mmap[row.smul(stride)?..row.smul(stride)?.sadd(width)?]);
-        original_mmap[row.smul(width)?..row.sadd(1)?.smul(width)?].copy_from_slice(&source);
+    frame: &mut Frame,
+) -> Result<ImgBuf, Error> {
+    if frame.stride.srem(frame.memory_format.n_bytes().u32())? == 0 {
+        return Ok(img_buf);
     }
-    frame.stride = width.try_u32()?;
 
-    // This mmap would have the wrong size after ftruncate
-    drop(original_mmap);
+    match img_buf {
+        ImgBuf::Vec(_) => Ok(img_buf),
+        ImgBuf::MMap(mut mmap) => {
+            let borrowed_fd = unsafe { std::os::fd::BorrowedFd::borrow_raw(raw_fd) };
 
-    nix::unistd::ftruncate(
-        borrowed_fd,
-        libc::off_t::try_from(frame.n_bytes()?).map_err(|_| DimensionTooLargerError)?,
-    )
-    .unwrap();
+            let width = frame
+                .width
+                .try_usize()?
+                .smul(frame.memory_format.n_bytes().usize())?;
+            let stride = frame.stride.try_usize()?;
+            let mut source = vec![0; width];
+            for row in 1..frame.height.try_usize()? {
+                source.copy_from_slice(&mmap[row.smul(stride)?..row.smul(stride)?.sadd(width)?]);
+                mmap[row.smul(width)?..row.sadd(1)?.smul(width)?].copy_from_slice(&source);
+            }
+            frame.stride = width.try_u32()?;
 
-    // Need a new mmap with correct size
-    unsafe { memmap::MmapMut::map_mut(raw_fd) }.map_err(Into::into)
+            // This mmap would have the wrong size after ftruncate
+            drop(mmap);
+
+            nix::unistd::ftruncate(
+                borrowed_fd,
+                libc::off_t::try_from(frame.n_bytes()?).map_err(|_| DimensionTooLargerError)?,
+            )
+            .unwrap();
+
+            // Need a new mmap with correct size
+            let mmap = unsafe { memmap::MmapMut::map_mut(raw_fd) }?;
+            Ok(ImgBuf::MMap(mmap))
+        }
+    }
+}
+
+pub enum ImgBuf {
+    MMap(memmap::MmapMut),
+    Vec(Vec<u8>),
+}
+
+impl ImgBuf {
+    pub fn as_slice(&self) -> &[u8] {
+        match self {
+            Self::MMap(mmap) => mmap.as_ref(),
+            Self::Vec(v) => v.as_slice(),
+        }
+    }
+
+    pub fn as_mut_slice(&mut self) -> &mut [u8] {
+        match self {
+            Self::MMap(mmap) => mmap.as_mut(),
+            Self::Vec(v) => v.as_mut_slice(),
+        }
+    }
+}
+
+impl<'a> std::ops::Deref for ImgBuf {
+    type Target = [u8];
+    fn deref(&self) -> &Self::Target {
+        self.as_slice()
+    }
+}
+
+impl<'a> std::ops::DerefMut for ImgBuf {
+    //type Target = [u8];
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.as_mut_slice()
+    }
 }
