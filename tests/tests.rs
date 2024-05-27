@@ -79,7 +79,7 @@ async fn test_dir_options(dir: impl AsRef<Path>, exif: bool) {
         eprintln!("  - {path:?}");
 
         if skip_ext.contains(&path.extension().unwrap_or_default().into()) {
-            eprint!("    (skipped)");
+            eprintln!("    (skipped)");
             continue;
         }
 
@@ -88,7 +88,7 @@ async fn test_dir_options(dir: impl AsRef<Path>, exif: bool) {
         if result.is_failed() {
             some_failed = true;
         } else {
-            eprint!("    (OK)");
+            eprintln!("    (OK)");
         }
 
         list.push((format!("{path:#?}"), result));
