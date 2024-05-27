@@ -9,7 +9,7 @@ if 'glycin-heif' in get_option('loaders')
 endif
 
 if 'glycin-jxl' in get_option('loaders')
-  dependency('libjxl', version: ['>= 0.8.2', '< 0.11.0'])
+  dependency('libjxl', version: ['>= 0.10.0'])
 endif
 
 if 'glycin-svg' in get_option('loaders')
@@ -42,8 +42,7 @@ foreach ext : get_option('test_skip_ext')
 endforeach
 
 cargo_options = [
-  '--profile',
-  cargo_profile,
+  '--profile', cargo_profile,
 ]
 
 cargo_env = {
@@ -54,11 +53,9 @@ cargo_env = {
   # Git commit for debugging
   'GIT_DESCRIBE': run_command(
     'git',
-    '-C',
-    meson.project_source_root(),
+    '-C', meson.project_source_root(),
     'rev-parse',
-    '--short',
-    'HEAD',
+    '--short', 'HEAD',
     check: false,
   ).stdout().strip(),
 }
@@ -121,10 +118,8 @@ if get_option('tests')
       find_program('meson'),
       args: [
         'install',
-        '-C',
-        meson.project_build_root(),
-        '--destdir',
-        destdir,
+        '-C', meson.project_build_root(),
+        '--destdir', destdir,
       ],
       is_parallel: false,
     )
@@ -158,11 +153,9 @@ if get_option('tests')
     cargo_bin,
     args: [
       'test',
-      '-p',
-      'tests',
+      '-p', 'tests',
       test_args,
-      '--target-dir',
-      # Not using a separate target dir causes rebuilds for the loaders
+      '--target-dir', # Not using a separate target dir causes rebuilds for the loaders
       cargo_target_dir / 'tests',
       cargo_options,
       '--',
