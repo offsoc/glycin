@@ -477,15 +477,14 @@ impl ImgBuf {
     }
 }
 
-impl<'a> std::ops::Deref for ImgBuf {
+impl std::ops::Deref for ImgBuf {
     type Target = [u8];
     fn deref(&self) -> &Self::Target {
         self.as_slice()
     }
 }
 
-impl<'a> std::ops::DerefMut for ImgBuf {
-    //type Target = [u8];
+impl std::ops::DerefMut for ImgBuf {
     fn deref_mut(&mut self) -> &mut Self::Target {
         self.as_mut_slice()
     }

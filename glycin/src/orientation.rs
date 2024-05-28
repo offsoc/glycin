@@ -26,6 +26,7 @@ pub fn apply_exif_orientation(
     }
 }
 
+#[allow(clippy::arithmetic_side_effects, clippy::cast_possible_truncation)]
 fn transform(mut img_buf: ImgBuf, frame: &mut Frame, transformation: Orientation) -> ImgBuf {
     let stride = frame.stride as usize;
     let width = frame.width as usize;
