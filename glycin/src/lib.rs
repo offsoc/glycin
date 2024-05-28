@@ -37,6 +37,7 @@ mod error;
 mod icc;
 mod orientation;
 mod sandbox;
+mod util;
 
 #[cfg(feature = "gobject")]
 pub mod gobject;
